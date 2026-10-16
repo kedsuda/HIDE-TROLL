@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/style.css">
   <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three-addons/" } }</script>
   <script src="vendor/socket.io/socket.io.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
   <canvas id="c"></canvas>
@@ -27,6 +28,17 @@
       <h1 class="logo">HIDE <span>&amp;</span> TROLL</h1>
       <p class="tagline">ซ่อนหาแปลงร่าง 3D • เล่นกับเพื่อน 3–10 คน</p>
       <div class="coins">🪙 <b class="coin-val">0</b></div>
+      <div id="googleBox" class="google-box hidden">
+        <div id="gSignedOut">
+          <div id="gBtn" class="g-btn"></div>
+          <div class="small muted">ล็อกอินเพื่อเก็บเหรียญและสกินไว้ในบัญชี เล่นเครื่องไหนก็ได้ของเดิม</div>
+        </div>
+        <div id="gSignedIn" class="g-user hidden">
+          <img id="gPic" alt="" referrerpolicy="no-referrer">
+          <div class="g-info"><b id="gName"></b><span class="small muted">☁️ บันทึกในบัญชี Google แล้ว</span></div>
+          <button id="btnLogout" class="btn small ghost">ออกจากระบบ</button>
+        </div>
+      </div>
       <label class="field">ชื่อของคุณ
         <input id="nameInput" maxlength="14" placeholder="ชื่อของคุณ เช่น ต้นกล้า" autocomplete="off">
       </label>

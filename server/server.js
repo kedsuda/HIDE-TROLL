@@ -3,6 +3,8 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
+import { OAuth2Client } from 'google-auth-library';
+import { getSave, putSave, sanitizeSave } from './store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -22,6 +24,10 @@ const SKILLS = {
 };
 const PROP_KEY = /^[a-z]{2,16}:\d{1,3}$/;
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+// Client ID ของ Google Sign-In (เปิดเผยได้ ไม่ใช่ความลับ)
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+  || '514825075787-gfdpn0ehi2e265pspdmnct8dmscufrkf.apps.googleusercontent.com';
+const googleAuth = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const app = express();
 app.use(express.static(path.join(ROOT, 'public')));
@@ -85,7 +91,7 @@ class Room {
 
   add(socket, name, skin) {
     const p = {
-      id: socket.id, name, skin,
+      id: socket.id, name, skin, pic: socket.data.user?.picture || '',
       team: this.phase === 'lobby' ? 'lobby' : 'hunter',
       origTeam: 'hunter', alive: true, prop: null, state: null,
       cds: {}, invisUntil: 0, hp: 100, stunUntil: 0,
@@ -127,7 +133,7 @@ class Room {
       code: this.code, hostId: this.hostId, maxPlayers: this.maxPlayers,
       mapChoice: this.mapChoice, phase: this.phase,
       players: [...this.players.values()].map((p) => ({
-        id: p.id, name: p.name, skin: p.skin, team: p.team, alive: p.alive,
+        id: p.id, name: p.name, skin: p.skin, team: p.team, alive: p.alive, pic: p.pic,
       })),
     };
   }
@@ -369,6 +375,28 @@ io.on('connection', (socket) => {
   });
 
   socket.on('leaveRoom', () => leave(socket));
+
+  // ---- ล็อกอิน Google: ตรวจ ID token กับ Google จริงก่อนเชื่อ ----
+  socket.on('login', async (idToken, cb) => {
+    cb = ack(cb);
+    try {
+      const ticket = await googleAuth.verifyIdToken({ idToken: String(idToken), audience: GOOGLE_CLIENT_ID });
+      const t = ticket.getPayload();
+      const picture = /^https:\/\/lh\d\.googleusercontent\.com\//.test(t.picture || '') ? t.picture : '';
+      socket.data.user = { sub: t.sub, name: clean(t.name || t.given_name, 30), picture };
+      cb({ ok: true, user: { name: socket.data.user.name, picture }, save: getSave(t.sub) });
+    } catch {
+      cb({ ok: false, msg: 'ล็อกอิน Google ไม่สำเร็จ ลองใหม่อีกครั้ง' });
+    }
+  });
+
+  socket.on('logout', () => { socket.data.user = null; });
+
+  socket.on('saveData', (d) => {
+    const u = socket.data.user;
+    const s = sanitizeSave(d);
+    if (u && s) putSave(u.sub, s, u);
+  });
 
   socket.on('settings', (d) => {
     const r = socket.data.room;

@@ -2,6 +2,10 @@
 // หลังขึ้น Render แล้ว ให้แก้เป็นลิงก์ของคุณ แล้วสั่ง npm run apk ใหม่
 export const DEFAULT_SERVER = 'https://hide-and-troll.onrender.com';
 
+export const GOOGLE_CLIENT_ID = '514825075787-gfdpn0ehi2e265pspdmnct8dmscufrkf.apps.googleusercontent.com';
+// โดเมนที่ลงทะเบียนไว้ใน Google Cloud (Authorized JavaScript origins)
+export const GOOGLE_ORIGINS = ['https://hide-and-troll.onrender.com', 'http://localhost:3000'];
+
 export const IS_APP = !!window.Capacitor?.isNativePlatform?.();
 
 export function serverUrl() {

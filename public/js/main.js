@@ -3,7 +3,7 @@ import { Input } from './input.js';
 import { COLORS, HATS, CHARACTERS, loadCharacters } from './character.js';
 import { MAPS } from './maps.js';
 import { sfx, unlockAudio } from './audio.js';
-import { IS_APP, serverUrl, setServerUrl } from './config.js';
+import { IS_APP, serverUrl, setServerUrl, GOOGLE_CLIENT_ID, GOOGLE_ORIGINS } from './config.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -20,6 +20,16 @@ const save = (() => {
 save.skin = { ...DEFAULT_SAVE.skin, ...save.skin };
 function persist() {
   try { localStorage.setItem('ht_save', JSON.stringify(save)); } catch { /* ignore */ }
+  syncSave();
+}
+
+// ล็อกอิน Google แล้ว: ส่งข้อมูลขึ้นบัญชีบนเซิร์ฟเวอร์ด้วย (รวบหลายครั้งเป็นครั้งเดียว)
+let gUser = null;
+let syncTimer = 0;
+function syncSave() {
+  if (!gUser || !socket?.connected) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => socket.emit('saveData', save), 400);
 }
 
 // slot = ตำแหน่งบนมือถือ (main = ปุ่มใหญ่, s0-s3 = วงในรอบปุ่มใหญ่, u1-u3 = ปุ่มเล็กวงนอก)
@@ -277,9 +287,18 @@ function renderLobby() {
   list.innerHTML = '';
   for (const p of room.players) {
     const li = document.createElement('li');
-    const dot = document.createElement('span');
-    dot.className = 'dot';
-    dot.style.background = `#${(COLORS[p.skin.color] || COLORS.mint).hex.toString(16).padStart(6, '0')}`;
+    let dot;
+    if (p.pic) {
+      dot = document.createElement('img');
+      dot.className = 'avatar';
+      dot.referrerPolicy = 'no-referrer';
+      dot.src = p.pic;
+      dot.alt = '';
+    } else {
+      dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = `#${(COLORS[p.skin.color] || COLORS.mint).hex.toString(16).padStart(6, '0')}`;
+    }
     const name = document.createElement('span');
     name.textContent = `${p.id === room.hostId ? '👑 ' : ''}${p.name}`;
     li.append(dot, name);
@@ -554,7 +573,113 @@ function netStatus(ok) {
   $('#netStatus').textContent = ok ? `🟢 ออนไลน์ • ${host}` : `🟡 กำลังเชื่อมต่อ… • ${host}`;
 }
 netStatus(false);
-socket.on('connect', () => { netStatus(true); $('#menuMsg').textContent = ''; });
+socket.on('connect', () => {
+  netStatus(true);
+  $('#menuMsg').textContent = '';
+  // เซิร์ฟเวอร์ลืมการล็อกอินเมื่อหลุด → ล็อกอินซ้ำด้วย token เดิม (ถ้ายังไม่หมดอายุ)
+  const cred = loadCred();
+  if (cred) googleLogin(cred, true);
+});
+
+// ---------- ล็อกอิน Google ----------
+const GOOGLE_OK = !IS_APP && GOOGLE_ORIGINS.includes(location.origin);
+
+function tokenExp(token) {
+  try {
+    const part = token.split('.')[1].replaceAll('-', '+').replaceAll('_', '/');
+    return JSON.parse(atob(part)).exp || 0;
+  } catch {
+    return 0;
+  }
+}
+function loadCred() {
+  try {
+    const c = JSON.parse(localStorage.getItem('ht_gcred') || 'null');
+    if (c && c.exp > Date.now() / 1000 + 60) return c.token;
+  } catch { /* ignore */ }
+  return null;
+}
+function storeCred(token) {
+  try {
+    if (token) localStorage.setItem('ht_gcred', JSON.stringify({ token, exp: tokenExp(token) }));
+    else localStorage.removeItem('ht_gcred');
+  } catch { /* ignore */ }
+}
+
+function showGoogleUser() {
+  $('#gSignedIn').classList.toggle('hidden', !gUser);
+  $('#gSignedOut').classList.toggle('hidden', !!gUser);
+  if (gUser) {
+    $('#gName').textContent = gUser.name;
+    $('#gPic').src = gUser.picture || 'icon.svg';
+  }
+}
+
+// รวมข้อมูลในเครื่องกับในบัญชี: เหรียญเอาค่ามากกว่า ของที่ซื้อรวมกัน สกิน/ชื่อใช้ของบัญชี
+function mergeSave(server) {
+  if (server) {
+    save.coins = Math.max(save.coins, server.coins || 0);
+    save.owned = [...new Set([...save.owned, ...(server.owned || [])])];
+    save.skin = { ...save.skin, ...(server.skin || {}) };
+    if (server.name) save.name = server.name;
+  }
+  if (!save.name) save.name = gUser.name.slice(0, 14);
+  $('#nameInput').value = save.name;
+  persist();
+  updateCoins();
+  game.setPreviewSkin(save.skin);
+}
+
+function googleLogin(token, silent = false) {
+  socket.emit('login', token, (res) => {
+    if (!res?.ok) {
+      storeCred(null);
+      gUser = null;
+      showGoogleUser();
+      if (!silent) toast(res?.msg || 'ล็อกอินไม่สำเร็จ');
+      return;
+    }
+    const first = !gUser;
+    gUser = res.user;
+    storeCred(token);
+    showGoogleUser();
+    if (first) mergeSave(res.save);
+    else syncSave();
+    if (!silent) toast(`สวัสดี ${gUser.name} 👋 ข้อมูลของคุณถูกเก็บในบัญชีแล้ว`);
+  });
+}
+
+function initGoogle(tries = 0) {
+  if (!GOOGLE_OK) return;
+  const g = window.google?.accounts?.id;
+  if (!g) {
+    if (tries < 50) setTimeout(() => initGoogle(tries + 1), 200);
+    return;
+  }
+  $('#googleBox').classList.remove('hidden');
+  g.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: (r) => { unlockAudio(); googleLogin(r.credential); },
+    auto_select: true,
+    cancel_on_tap_outside: true,
+    use_fedcm_for_prompt: true,
+  });
+  g.renderButton($('#gBtn'), {
+    theme: 'filled_blue', size: 'large', shape: 'pill', text: 'signin_with', locale: 'th', width: 260,
+  });
+  showGoogleUser();
+  if (!loadCred()) g.prompt();
+}
+initGoogle();
+
+$('#btnLogout').addEventListener('click', () => {
+  window.google?.accounts?.id.disableAutoSelect();
+  socket.emit('logout');
+  storeCred(null);
+  gUser = null;
+  showGoogleUser();
+  toast('ออกจากระบบแล้ว (เหรียญ/สกินยังอยู่ในบัญชี)');
+});
 socket.on('connect_error', () => netStatus(false));
 socket.io.on('reconnect_attempt', () => netStatus(false));
 socket.on('disconnect', () => {

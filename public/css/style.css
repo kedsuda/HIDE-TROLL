@@ -78,6 +78,16 @@ kbd {
 .field { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--muted); }
 .row { display: flex; gap: 10px; }
 .row > * { flex: 1; }
+.google-box { background: rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 10px 12px; }
+.google-box .small { margin-top: 6px; }
+.g-btn { min-height: 40px; display: flex; justify-content: center; }
+.g-user { display: flex; align-items: center; gap: 10px; }
+.g-user img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); flex: none; background: #fff2; }
+.g-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.g-info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-info .small { margin-top: 0; }
+.player-list .avatar { width: 26px; height: 26px; border-radius: 50%; flex: none; border: 2px solid rgba(255, 255, 255, 0.6); }
+@media (max-height: 520px) { .google-box .small.muted { display: none; } .google-box { padding: 6px 10px; } }
 .code-input { text-transform: uppercase; letter-spacing: 0.3em; text-align: center; font-weight: 600; }
 .msg { min-height: 1.2em; margin: 0; color: var(--danger); }
 .msg:empty { display: none; }

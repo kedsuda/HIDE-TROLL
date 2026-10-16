@@ -20,6 +20,7 @@
     "@capacitor/android": "^6.2.0",
     "@capacitor/core": "^6.2.0",
     "express": "^4.21.2",
+    "google-auth-library": "^9.15.1",
     "socket.io": "^4.8.1",
     "three": "0.169.0"
   },
