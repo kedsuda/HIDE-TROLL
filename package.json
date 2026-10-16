@@ -1,0 +1,20 @@
+{
+  "name": "hide-and-troll",
+  "version": "0.1.0",
+  "description": "HIDE & TROLL - เกมซ่อนหาแปลงร่าง 3D ออนไลน์",
+  "type": "module",
+  "private": true,
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1",
+    "three": "0.169.0"
+  }
+}

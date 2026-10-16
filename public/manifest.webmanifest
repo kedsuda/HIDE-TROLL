@@ -1,0 +1,12 @@
+{
+  "name": "HIDE & TROLL - ซ่อนหาแปลงร่าง",
+  "short_name": "HIDE & TROLL",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#2a1b4d",
+  "theme_color": "#2a1b4d",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

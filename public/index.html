@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#2a1b4d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>HIDE &amp; TROLL — ซ่อนหาแปลงร่าง</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js" } }</script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <!-- ===== เมนูหลัก ===== -->
+  <section id="menu" class="screen">
+    <div class="panel menu-panel">
+      <h1 class="logo">HIDE <span>&amp;</span> TROLL</h1>
+      <p class="tagline">ซ่อนหาแปลงร่าง 3D • เล่นกับเพื่อน 3–10 คน</p>
+      <div class="coins">🪙 <b class="coin-val">0</b></div>
+      <label class="field">ชื่อของคุณ
+        <input id="nameInput" maxlength="14" placeholder="เช่น ต้นกล้า" autocomplete="off">
+      </label>
+      <div class="row">
+        <select id="maxSelect" aria-label="จำนวนคนสูงสุด">
+          <option value="4">สูงสุด 4 คน</option>
+          <option value="6">สูงสุด 6 คน</option>
+          <option value="8">สูงสุด 8 คน</option>
+          <option value="10" selected>สูงสุด 10 คน</option>
+        </select>
+        <button id="btnCreate" class="btn primary">✨ สร้างห้อง</button>
+      </div>
+      <div class="row">
+        <input id="codeInput" class="code-input" maxlength="4" placeholder="รหัสห้อง" autocomplete="off">
+        <button id="btnJoin" class="btn">🚪 เข้าร่วม</button>
+      </div>
+      <div class="row">
+        <button class="btn ghost" data-open="shop">🎨 ร้านสกิน</button>
+        <button class="btn ghost" data-open="help">❓ วิธีเล่น</button>
+      </div>
+      <p id="menuMsg" class="msg"></p>
+    </div>
+  </section>
+
+  <!-- ===== ล็อบบี้ ===== -->
+  <section id="lobby" class="screen hidden">
+    <div class="panel lobby-panel">
+      <div class="lobby-head">
+        <div>
+          <div class="small">รหัสห้อง (ส่งให้เพื่อน)</div>
+          <div id="roomCode" class="room-code">----</div>
+        </div>
+        <button id="btnCopy" class="btn small">🔗 แชร์ลิงก์</button>
+      </div>
+      <div class="lobby-body">
+        <div>
+          <h3>ผู้เล่น <span id="playerCount" class="muted"></span></h3>
+          <ul id="playerList" class="player-list"></ul>
+        </div>
+        <div class="settings">
+          <h3>ตั้งค่าห้อง</h3>
+          <label class="field">แผนที่
+            <select id="mapSelect">
+              <option value="random">🎲 สุ่มแผนที่</option>
+              <option value="haunted">👻 บ้านผีสิง</option>
+              <option value="market">🛒 ซูเปอร์มาร์เก็ต</option>
+              <option value="school">🏫 โรงเรียน</option>
+            </select>
+          </label>
+          <label class="field">จำนวนคนสูงสุด
+            <select id="maxSelect2">
+              <option value="4">4 คน</option>
+              <option value="6">6 คน</option>
+              <option value="8">8 คน</option>
+              <option value="10">10 คน</option>
+            </select>
+          </label>
+          <button id="btnStart" class="btn primary big">▶ เริ่มเกม</button>
+          <p id="lobbyHint" class="small muted"></p>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn ghost" data-open="shop">🎨 สกิน</button>
+        <button class="btn ghost" data-open="help">❓ วิธีเล่น</button>
+        <button id="btnLeave" class="btn ghost">🚪 ออกจากห้อง</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HUD ในเกม ===== -->
+  <section id="hud" class="hidden">
+    <div class="top-bar">
+      <div id="teamBadge" class="badge">—</div>
+      <div class="timer-box">
+        <div id="phaseLabel">ซ่อนตัว</div>
+        <div id="timer">0:30</div>
+      </div>
+      <div id="hiderCount" class="badge">🫥 0</div>
+    </div>
+    <div id="crosshair"></div>
+    <div id="hint" class="hint"></div>
+    <div id="feed" class="feed"></div>
+    <div id="hpBar" class="hp hidden"><div id="hpFill"></div><span id="hpText">HP 100</span></div>
+    <div id="skills" class="skills"></div>
+    <div id="clickHint" class="click-hint hidden">🖱️ คลิกที่จอเพื่อควบคุม</div>
+    <div id="blind" class="blind hidden">
+      <div>🙈 ฝ่ายซ่อนกำลังหาที่ซ่อน...</div>
+      <div id="blindTimer" class="big-num">30</div>
+      <div class="small">ห้ามแอบดูนะ!</div>
+    </div>
+    <div id="touch" class="touch hidden">
+      <div id="joyZone" class="joy-zone">
+        <div id="joyBase" class="joy-base"><div id="joyKnob" class="joy-knob"></div></div>
+      </div>
+      <button class="tbtn jump" data-act="jump">⤒</button>
+    </div>
+    <button id="btnPause" class="corner-btn" aria-label="เมนู">☰</button>
+  </section>
+
+  <!-- ===== แชต ===== -->
+  <div id="chat" class="chat hidden">
+    <div id="chatLog" class="chat-log"></div>
+    <input id="chatInput" maxlength="120" placeholder="พิมพ์แชต… (Enter)" autocomplete="off">
+  </div>
+
+  <!-- ===== หน้าต่างย่อย ===== -->
+  <div id="pause" class="modal hidden">
+    <div class="panel">
+      <h2>พักเกม</h2>
+      <button id="btnResume" class="btn primary big">▶ เล่นต่อ</button>
+      <button id="btnCam" class="btn big">🎥 สลับมุมกล้อง (V)</button>
+      <button id="btnQuit" class="btn ghost big">🚪 ออกจากห้อง</button>
+    </div>
+  </div>
+
+  <div id="end" class="modal hidden">
+    <div class="panel end-panel">
+      <h2 id="endTitle">ฝ่ายซ่อนชนะ!</h2>
+      <p id="endSub" class="muted"></p>
+      <ul id="endList" class="end-list"></ul>
+      <p class="small muted">กลับล็อบบี้อัตโนมัติในไม่กี่วินาที…</p>
+    </div>
+  </div>
+
+  <div id="shop" class="modal hidden">
+    <div class="panel shop-panel">
+      <div class="shop-head">
+        <h2>🎨 ร้านสกิน</h2>
+        <div class="coins">🪙 <b class="coin-val">0</b></div>
+      </div>
+      <h3>สีตัวละคร</h3>
+      <div id="shopColors" class="shop-grid"></div>
+      <h3>หมวก</h3>
+      <div id="shopHats" class="shop-grid"></div>
+      <button class="btn primary big" data-close>เสร็จแล้ว</button>
+    </div>
+  </div>
+
+  <div id="help" class="modal hidden">
+    <div class="panel help-panel">
+      <h2>❓ วิธีเล่น</h2>
+      <p><b>กติกา:</b> ผู้เล่นถูกสุ่มแบ่งเป็น <b class="t-hider">ฝ่ายซ่อน</b> และ <b class="t-hunter">ฝ่ายล่า</b>
+        ฝ่ายซ่อนมี <b>30 วินาที</b> แปลงร่างเป็นสิ่งของและหาที่ซ่อน (ระหว่างนั้นฝ่ายล่าจะมองไม่เห็น)
+        จากนั้นฝ่ายล่ามี <b>5 นาที</b> ตามหาให้ครบ — ถ้าจับไม่หมด ฝ่ายซ่อนชนะ!
+        คนที่ถูกจับจะกลายเป็นฝ่ายล่าช่วยตามหาต่อ</p>
+      <div class="help-cols">
+        <div>
+          <h3 class="t-hider">🫥 ฝ่ายซ่อน</h3>
+          <ul>
+            <li><kbd>E</kbd> / คลิก — แปลงร่างเป็นของที่เล็งอยู่</li>
+            <li><kbd>Q</kbd> — ล่องหน 6 วินาที</li>
+            <li><kbd>F</kbd> — สร้างตัวปลอมหลอกฝ่ายล่า</li>
+            <li><kbd>Shift</kbd> — วิ่งเร็วชั่วคราว</li>
+            <li><kbd>T</kbd> — ยั่วยุ (+เหรียญ แต่มีเสียง!)</li>
+            <li><kbd>R</kbd> — ล็อกการหมุน • <kbd>Z</kbd> — กลับร่าง</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="t-hunter">🔦 ฝ่ายล่า</h3>
+          <ul>
+            <li>คลิก / <kbd>E</kbd> — ยิงของที่น่าสงสัย</li>
+            <li>ยิงผิดของจริงเสีย 5 HP — HP หมดจะมึน 5 วิ</li>
+            <li>ยิงโดนตัวปลอม = โดนหลอก 🤡</li>
+            <li><kbd>Shift</kbd> — วิ่งเร็วชั่วคราว</li>
+          </ul>
+        </div>
+      </div>
+      <p><kbd>WASD</kbd> เดิน • <kbd>Space</kbd> กระโดด • เมาส์หมุนกล้อง • <kbd>V</kbd> สลับมุมกล้อง • <kbd>Enter</kbd> แชต</p>
+      <p class="small muted">มือถือ: จอยซ้ายเดิน ลากจอขวาหมุนกล้อง ปุ่มด้านขวาใช้สกิล</p>
+      <p><b>🪙 เหรียญ:</b> จับได้ +20 • รอดจนจบ +50 • ฝ่ายล่าชนะ +40 • ตัวปลอมหลอกสำเร็จ +10 • ยั่วยุ +2 • เล่นจบรอบ +10</p>
+      <button class="btn primary big" data-close>เข้าใจแล้ว!</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
