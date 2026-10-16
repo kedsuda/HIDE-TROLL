@@ -3,15 +3,30 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { part, mat } from './props.js';
 
-// ตัวละครให้เลือก (file = โมเดล 3D ใน public/models, yaw = หมุนให้หันหน้าไปทาง +z)
+// ตัวละครให้เลือก
+// file = โมเดล 3D ใน public/models, yaw = หมุนให้หันหน้าไปทาง +z
+// hat = จุดวางหมวกบนหัวจริงของตัวละคร { y: ความสูงหัว, z: เลื่อนไปข้างหน้า, s: ขนาดหมวก }
 export const CHARACTERS = {
   blob: { name: 'บล็อบ', icon: '🟢', price: 0 },
-  tuxedo: { name: 'ทักซิโด้แซม', icon: '🐧', price: 0, file: 'models/tuxedo.glb', yaw: 0 },
-  duo: { name: 'ดูโอ้', icon: '🦉', price: 0, file: 'models/duo.glb', yaw: 0 },
-  porter: { name: 'แมวพอร์เตอร์', icon: '🐱', price: 0, file: 'models/porter.glb', yaw: 0 },
-  doraemon: { name: 'โดราเอมอน', icon: '🔔', price: 0, file: 'models/doraemon.glb', yaw: 0 },
-  ods: { name: 'กวางน้อย', icon: '🦌', price: 0, file: 'models/ods.glb', yaw: 0 },
+  tuxedo: { name: 'ทักซิโด้แซม', icon: '🐧', price: 0, file: 'models/tuxedo.glb', yaw: 0, hat: { x: 0.17, y: 1.44, z: 0, s: 0.85 } },
+  duo: { name: 'ดูโอ้', icon: '🦉', price: 0, file: 'models/duo.glb', yaw: 0, hat: { y: 1.42, z: 0, s: 1 } },
+  porter: { name: 'แมวพอร์เตอร์', icon: '🐱', price: 0, file: 'models/porter.glb', yaw: 0, hat: { y: 1.36, z: 0.27, s: 0.72 } },
+  doraemon: { name: 'โดราเอมอน', icon: '🔔', price: 0, file: 'models/doraemon.glb', yaw: 0, hat: { y: 1.42, z: 0, s: 1.05 } },
+  ods: { name: 'กวางน้อย', icon: '🦌', price: 0, file: 'models/ods.glb', yaw: 0, hat: { y: 1.06, z: 0.27, s: 0.7 } },
 };
+const BLOB_HEAD_TOP = 1.51;
+
+// ย้ายหมวก (ซึ่งออกแบบไว้สำหรับหัวบล็อบ) ไปวางบนหัวของตัวละครแต่ละตัว
+function mountHat(hat, cfg) {
+  const g = new THREE.Group();
+  const h = buildHat(hat);
+  h.position.y = -BLOB_HEAD_TOP;
+  g.add(h);
+  g.position.set(cfg?.x ?? 0, cfg?.y ?? BLOB_HEAD_TOP, cfg?.z ?? 0);
+  g.scale.setScalar(cfg?.s ?? 1);
+  g.userData.isHat = true;
+  return g;
+}
 const CHAR_HEIGHT = 1.5;
 const templates = new Map();
 
@@ -61,7 +76,7 @@ function buildModelChar(id, skin, hunter) {
   });
   holder.add(model);
   pivot.add(holder);
-  pivot.add(buildHat(skin.hat));
+  pivot.add(mountHat(skin.hat, CHARACTERS[id].hat));
   if (hunter) {
     pivot.add(part('box', 0xff7a00, [0.14, 0.16, 0.55], [0.5, 0.78, 0.22]));
     pivot.add(part('cyl', 0x33ccff, [0.12, 0.16, 0.12], [0.5, 0.78, 0.54], { r: [Math.PI / 2, 0, 0], e: 0x0a6a8a }));

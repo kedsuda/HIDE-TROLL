@@ -121,6 +121,10 @@ export class Game {
     this.setPreviewSkin({ color: 'mint', hat: 'none' });
   }
 
+  previewPop() {
+    this.popAt = this.clock.elapsedTime;
+  }
+
   setPreviewFrame(free) {
     if (this.previewFree !== undefined && Math.abs((this.previewFree ?? 0) - free) < 0.01) return;
     this.previewFree = free;
@@ -504,6 +508,9 @@ export class Game {
     const t = this.clock.elapsedTime;
     if (!this.active) {
       this.previewChar.rotation.y += dt * 0.6;
+      // เด้งตัวเมื่อเปลี่ยนชุด/หมวก
+      const pt = t - (this.popAt ?? -9);
+      this.previewChar.scale.setScalar(pt < 0.45 ? 1 + Math.sin((pt / 0.45) * Math.PI) * 0.18 : 1);
       animateCharacter(this.previewChar, t, false, false);
       this.renderer.render(this.preview, this.previewCam);
       return;

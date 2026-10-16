@@ -116,11 +116,12 @@ function show(id) {
 
 // จอแนวตั้ง: บอกกล้องว่าเหลือที่ว่างเหนือเมนูเท่าไร (ตัวละครจะไปยืนตรงนั้น)
 function layoutPreview() {
-  const panel = document.querySelector('.screen:not(.hidden) > .panel');
+  const shop = document.querySelector('#shop:not(.hidden) .panel');
+  const panel = shop || document.querySelector('.screen:not(.hidden) > .panel');
   if (panel) game.setPreviewFrame(panel.getBoundingClientRect().top / window.innerHeight);
 }
 const panelObserver = new ResizeObserver(() => layoutPreview());
-for (const el of document.querySelectorAll('.screen > .panel')) panelObserver.observe(el);
+for (const el of document.querySelectorAll('.screen > .panel, #shop .panel')) panelObserver.observe(el);
 window.addEventListener('resize', layoutPreview);
 
 function updateCoins() {
@@ -139,11 +140,15 @@ function openModal(id) {
   if (id === 'shop') {
     renderShop();
     game.setPreviewShift(true);
+    requestAnimationFrame(layoutPreview);
   }
 }
 function closeModal(el) {
   el.classList.add('hidden');
-  if (el.id === 'shop') game.setPreviewShift(false);
+  if (el.id === 'shop') {
+    game.setPreviewShift(false);
+    requestAnimationFrame(layoutPreview);
+  }
   if (inGame && $('#pause').classList.contains('hidden')) input.enabled = true;
 }
 for (const b of $$('[data-open]')) b.addEventListener('click', () => { sfx.click(); openModal(b.dataset.open); });
@@ -194,8 +199,12 @@ function renderShop() {
         save.skin[kind] = id;
         persist();
         game.setPreviewSkin(save.skin);
+        game.previewPop();
         if (room) socket.emit('setSkin', save.skin);
         renderShop();
+        const what = kind === 'hat' ? (id === 'none' ? 'ถอดหมวกแล้ว' : `ใส่${it.name}แล้ว 🎩`)
+          : kind === 'char' ? `เปลี่ยนเป็น${it.name}แล้ว` : `เปลี่ยนสีเป็น${it.name}แล้ว 🎨`;
+        toast(owned ? what : `ซื้อ${it.name}แล้ว! ${what}`);
       });
       box.append(el);
     }
