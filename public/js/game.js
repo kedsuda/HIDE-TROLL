@@ -75,8 +75,9 @@ export class Game {
     const pc = this.previewCam;
     pc.aspect = w / h;
     const wide = w / h > 1.15;
-    pc.position.set(wide ? -1.9 : 0, wide ? 1.5 : 2.6, wide ? 5.2 : 7);
-    pc.lookAt(wide ? -1.9 : 0, wide ? 0.9 : 1.6, 0);
+    // จอคอม: ตัวละครอยู่กลางจอ / มือถือแนวตั้ง: มองจากสูงขึ้นเพราะเมนูอยู่ด้านล่าง
+    pc.position.set(0, wide ? 1.6 : 2.6, wide ? 5.6 : 7);
+    pc.lookAt(0, wide ? 0.85 : 1.6, 0);
     pc.updateProjectionMatrix();
   }
 
@@ -91,7 +92,7 @@ export class Game {
     const plat = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 0.3, 32), mat(0x6c4ab6));
     plat.position.y = -0.15;
     s.add(plat);
-    for (const [key, x, z, ry] of [['crate:0', -2.4, -1.4, 0.4], ['pumpkin:0', 2.2, -1, -0.5], ['chair:3', -2.1, 1, 0.9], ['plant:1', 2.4, 1.1, 0], ['ghost:0', 0.4, -2.8, 0]]) {
+    for (const [key, x, z, ry] of [['crate:0', -2.3, -1.2, 0.4], ['chair:3', -1.6, 0.9, 0.9], ['ghost:0', -0.6, -2.4, 0.2], ['pumpkin:0', 1.6, -1.5, -0.5], ['plant:1', 1.8, 0.8, 0]]) {
       const g = buildProp(key);
       g.position.set(x, 0, z);
       g.rotation.y = ry;
