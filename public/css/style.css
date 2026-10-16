@@ -279,6 +279,35 @@ body.lobby-open .chat { right: auto; }
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* มือถือแนวนอน (จอเตี้ย) */
+body.is-touch .tbtn.jump { right: auto; left: auto; right: 250px; bottom: 18px; width: 64px; height: 64px; }
+@media (max-height: 520px) {
+  .menu-panel { gap: 8px; padding: 14px 18px; }
+  .screen { padding: 8px 16px; }
+  .panel { max-height: calc(100vh - 16px); }
+  .menu-panel { position: relative; }
+  .logo { font-size: 1.9rem; }
+  .tagline { display: none; }
+  .menu-panel > .coins { position: absolute; top: 16px; right: 18px; }
+  .menu-panel > .field { font-size: 0; gap: 0; }
+  .menu-panel > .field input { font-size: 1rem; }
+  .menu-panel input, .menu-panel select, .menu-panel .btn { padding-top: 0.45em; padding-bottom: 0.45em; }
+  .lobby-panel { gap: 8px; padding: 14px 18px; }
+  .room-code { font-size: 1.8rem; }
+  .player-list li { padding: 5px 10px; }
+  body.is-touch .skills { width: 196px; gap: 8px; }
+  body.is-touch .skill { width: 54px; height: 54px; font-size: 1.35rem; }
+  body.is-touch .skill.main { width: 64px; height: 64px; font-size: 1.7rem; }
+  body.is-touch .tbtn.jump { right: 222px; width: 58px; height: 58px; }
+  body.is-touch .chat.in-game { top: 62px; width: 34vw; }
+  body.is-touch .chat.in-game input { padding: 0.25em 0.6em; font-size: 0.75rem; opacity: 0.45; }
+  body.is-touch .chat.in-game .chat-log { max-height: 64px; font-size: 0.7rem; }
+  .top-bar { gap: 8px; }
+  .badge { padding: 4px 10px; font-size: 0.85rem; margin-top: 6px; }
+  .timer-box { padding: 2px 14px 4px; min-width: 90px; }
+  #timer { font-size: 1.4rem; }
+}
+
 @media (max-width: 760px), (max-aspect-ratio: 23/20) {
   .screen { justify-content: center; align-items: flex-end; padding-right: 16px; }
   .lobby-body, .help-cols { grid-template-columns: 1fr; }
