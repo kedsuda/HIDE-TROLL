@@ -22,6 +22,10 @@ npm start
 
 ## ขึ้นเซิร์ฟเวอร์ฟรี (Render.com)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kedsuda/HIDE-TROLL)
+
+กดปุ่มด้านบน → ล็อกอิน Render → กด **Deploy Blueprint** ได้เลย หรือทำเองตามขั้นตอน:
+
 1. อัปโหลดโฟลเดอร์นี้ขึ้น GitHub
 2. ไปที่ https://render.com → **New → Blueprint** → เลือก repo (มี `render.yaml` ให้แล้ว)
    หรือ **New → Web Service**: Build `npm install`, Start `npm start`, Plan `Free`
