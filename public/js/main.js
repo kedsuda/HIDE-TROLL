@@ -3,7 +3,7 @@ import { Input } from './input.js';
 import { COLORS, HATS } from './character.js';
 import { MAPS } from './maps.js';
 import { sfx, unlockAudio } from './audio.js';
-import { IS_APP, serverUrl, setServerUrl } from './config.js';
+import { IS_APP, DEFAULT_SERVER, serverUrl, setServerUrl } from './config.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -108,6 +108,7 @@ function openModal(id) {
   if (document.pointerLockElement) document.exitPointerLock();
   input.enabled = false;
   if (id === 'shop') renderShop();
+  if (id === 'getapp') setupGetApp();
 }
 function closeModal(el) {
   el.classList.add('hidden');
@@ -117,6 +118,74 @@ for (const b of $$('[data-open]')) b.addEventListener('click', () => { sfx.click
 for (const b of $$('[data-close]')) b.addEventListener('click', () => closeModal(b.closest('.modal')));
 for (const m of $$('.modal')) {
   m.addEventListener('click', (e) => { if (e.target === m && m.id !== 'end') closeModal(m); });
+}
+
+// ---------- ดาวน์โหลดลงโทรศัพท์ ----------
+let installPrompt = null;
+if (!IS_APP && 'serviceWorker' in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  $('#pwaOption').classList.remove('hidden');
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  $('#pwaOption').classList.add('hidden');
+  toast('ติดตั้งแล้ว! เปิดเกมได้จากไอคอนบนหน้าจอ 🎉');
+});
+$('#btnInstallPwa').addEventListener('click', async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice.catch(() => {});
+  installPrompt = null;
+  $('#pwaOption').classList.add('hidden');
+});
+if (IS_APP) $('#btnGetApp').classList.add('hidden');
+
+let qrLib = null;
+function loadQr() {
+  if (!qrLib) {
+    qrLib = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'vendor/qrcode/qrcode.js';
+      s.onload = () => resolve(window.qrcode);
+      s.onerror = reject;
+      document.head.append(s);
+    });
+  }
+  return qrLib;
+}
+
+// ที่อยู่ที่มือถือเปิดได้: ถ้าเปิดจาก localhost ให้ใช้ IP ในวง Wi-Fi แทน
+async function phoneUrl() {
+  if (!/^(localhost|127.|[::1])/.test(location.hostname)) return location.origin;
+  try {
+    const info = await (await fetch('api/info')).json();
+    return info.lan[0] || location.origin;
+  } catch {
+    return location.origin;
+  }
+}
+
+async function setupGetApp() {
+  const url = await phoneUrl();
+  const note = $('#apkServerNote');
+  note.classList.toggle('hidden', url === DEFAULT_SERVER);
+  note.textContent = `หลังติดตั้ง: ถ้าแอปต่อเซิร์ฟเวอร์ไม่ได้ ให้ใส่ ${url} ในช่อง "🌐 เซิร์ฟเวอร์เกม" ที่หน้าเมนูของแอป`;
+  if (input.touch) return;
+  $('#qrBox').classList.remove('hidden');
+  $('#qrUrl').textContent = url;
+  try {
+    const qrcode = await loadQr();
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    $('#qr').innerHTML = qr.createImgTag(5, 0);
+  } catch {
+    $('#qr').textContent = '';
+  }
 }
 
 // ---------- ร้านสกิน ----------

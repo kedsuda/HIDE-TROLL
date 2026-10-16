@@ -255,6 +255,19 @@ body.lobby-open .chat { right: auto; }
 .end-list li { display: flex; justify-content: space-between; padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.07); }
 .end-list li.me { outline: 2px solid var(--accent); }
 
+.get-app {
+  background: linear-gradient(135deg, #43e97b, #38b2f9); font-size: 1.05rem; padding: 0.7em;
+}
+.getapp-panel { width: min(480px, 100%) !important; }
+.qr-box { display: flex; gap: 14px; align-items: center; background: rgba(255, 255, 255, 0.06); padding: 12px; border-radius: 16px; }
+.qr { background: #fff; padding: 8px; border-radius: 12px; line-height: 0; flex: none; }
+.qr img { width: 150px; height: 150px; image-rendering: pixelated; }
+.qr-url { font-size: 0.8rem; word-break: break-all; color: var(--accent); user-select: text; }
+.dl-option { border: 2px solid var(--line); border-radius: 16px; padding: 10px 14px; }
+.dl-option p { margin: 6px 0 0; }
+.dl-title { font-weight: 600; margin-bottom: 4px; }
+.dl-btn { display: block; text-align: center; text-decoration: none; color: inherit; }
+
 .toast {
   position: fixed; left: 50%; top: 22%; transform: translate(-50%, -10px); z-index: 20;
   background: rgba(20, 10, 40, 0.9); border: 2px solid var(--accent); padding: 8px 18px;

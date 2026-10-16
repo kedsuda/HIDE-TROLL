@@ -45,6 +45,7 @@
         <button class="btn ghost" data-open="shop">🎨 ร้านสกิน</button>
         <button class="btn ghost" data-open="help">❓ วิธีเล่น</button>
       </div>
+      <button id="btnGetApp" class="btn get-app" data-open="getapp">📲 ดาวน์โหลดลงโทรศัพท์</button>
       <p id="menuMsg" class="msg"></p>
       <label id="serverBox" class="field hidden">🌐 เซิร์ฟเวอร์เกม
         <input id="serverInput" placeholder="https://..." autocomplete="off" inputmode="url">
@@ -202,6 +203,38 @@
       <p class="small muted">มือถือ: จอยซ้ายเดิน ลากจอขวาหมุนกล้อง ปุ่มด้านขวาใช้สกิล</p>
       <p><b>🪙 เหรียญ:</b> จับได้ +20 • รอดจนจบ +50 • ฝ่ายล่าชนะ +40 • ตัวปลอมหลอกสำเร็จ +10 • ยั่วยุ +2 • เล่นจบรอบ +10</p>
       <button class="btn primary big" data-close>เข้าใจแล้ว!</button>
+    </div>
+  </div>
+
+  <div id="getapp" class="modal hidden">
+    <div class="panel getapp-panel">
+      <h2>📲 เล่นบนโทรศัพท์</h2>
+      <div id="qrBox" class="qr-box hidden">
+        <div id="qr" class="qr"></div>
+        <div>
+          <b>สแกน QR ด้วยกล้องมือถือ</b>
+          <p class="small muted">เพื่อเปิดหน้านี้บนโทรศัพท์ แล้วกดดาวน์โหลด/ติดตั้งจากในมือถือ</p>
+          <code id="qrUrl" class="qr-url"></code>
+        </div>
+      </div>
+
+      <div class="dl-option">
+        <div class="dl-title">🤖 Android</div>
+        <a id="apkLink" class="btn primary big dl-btn" href="download/hide-and-troll.apk" download="hide-and-troll.apk">⬇️ ดาวน์โหลดแอป (APK 4 MB)</a>
+        <p class="small muted">เปิดไฟล์ที่โหลดมา → ถ้ามือถือถาม ให้กด "อนุญาตให้ติดตั้งจากแหล่งนี้" → ติดตั้ง</p>
+        <p id="apkServerNote" class="small hidden"></p>
+      </div>
+
+      <div id="pwaOption" class="dl-option hidden">
+        <div class="dl-title">⚡ ติดตั้งแบบเร็ว (ไม่ต้องโหลดไฟล์)</div>
+        <button id="btnInstallPwa" class="btn big">➕ เพิ่มไอคอนเกมลงหน้าจอ</button>
+      </div>
+
+      <div class="dl-option">
+        <div class="dl-title">🍎 iPhone / iPad</div>
+        <p class="small muted">เปิดเว็บนี้ด้วย <b>Safari</b> → กดปุ่มแชร์ <b>⬆️</b> → เลือก <b>"เพิ่มไปยังหน้าจอโฮม"</b></p>
+      </div>
+      <button class="btn ghost big" data-close>ปิด</button>
     </div>
   </div>
 
