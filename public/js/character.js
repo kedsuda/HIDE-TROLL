@@ -113,38 +113,76 @@ export const HATS = {
 };
 
 const capsule = new THREE.CapsuleGeometry(0.42, 0.55, 8, 18);
+const halfRing = new THREE.TorusGeometry(0.44, 0.045, 8, 24, Math.PI);
 
-function buildHat(hat) {
+// หมวกทุกแบบออกแบบให้วางบนหัวบล็อบ (ยอดหัวอยู่ที่ y = 1.51) แล้วค่อยย้ายไปหัวตัวละครอื่นด้วย mountHat
+export function buildHat(hat) {
   const g = new THREE.Group();
+  const T = 1.51;
   switch (hat) {
-    case 'party':
-      g.add(part('cone', 0xff4fa3, [0.36, 0.5, 0.36], [0, 1.72, 0]), part('sph', 0xfff275, [0.14, 0.14, 0.14], [0, 1.98, 0]));
+    case 'party': {
+      // กรวยม่วง ลายดาวเหลือง ระบายชมพู ปอมปอมทอง
+      g.add(part('cone', 0x7b3fe4, [0.4, 0.58, 0.4], [0, T + 0.29, 0]));
+      const dots = [[0.1, 0.12, 0.13], [-0.11, 0.2, 0.08], [0.02, 0.33, 0.1], [0.07, 0.22, -0.12], [-0.08, 0.08, -0.14]];
+      for (const [x, y, z] of dots) g.add(part('sph', 0xffd84d, [0.05, 0.05, 0.05], [x, T + y, z], { e: 0x664400 }));
+      g.add(part('tor', 0xff7ab8, [0.44, 0.44, 0.45], [0, T + 0.02, 0], { r: [Math.PI / 2, 0, 0] }));
+      g.add(part('sph', 0xffd84d, [0.15, 0.15, 0.15], [0, T + 0.6, 0], { e: 0x996600 }));
       break;
+    }
     case 'cap':
-      g.add(part('sph', 0x2f6fde, [0.78, 0.4, 0.78], [0, 1.45, 0]), part('box', 0x2f6fde, [0.5, 0.04, 0.38], [0, 1.47, 0.4]));
+      // แก๊ปฟ้า กระดุมบนยอด ปีกหมวกด้านหน้า
+      g.add(part('sph', 0x2f7bff, [0.84, 0.5, 0.84], [0, T - 0.05, 0]));
+      g.add(part('cyl', 0x1f5fd6, [0.62, 0.04, 0.46], [0, T - 0.03, 0.36]));
+      g.add(part('sph', 0x1f5fd6, [0.08, 0.05, 0.08], [0, T + 0.2, 0]));
+      g.add(part('box', 0x1f5fd6, [0.02, 0.2, 0.3], [0, T + 0.08, 0.12], { r: [-0.5, 0, 0] }));
       break;
     case 'chef':
-      g.add(part('cyl', 0xffffff, [0.55, 0.35, 0.55], [0, 1.62, 0]), part('sph', 0xffffff, [0.72, 0.38, 0.72], [0, 1.84, 0]));
+      // แถบผ้าขาว + ยอดฟูนุ่ม 5 ก้อน + ป้ายทองด้านหน้า
+      g.add(part('cyl', 0xf7f7f7, [0.6, 0.24, 0.6], [0, T + 0.08, 0]));
+      for (const [x, y, z, r] of [[0, 0.42, 0, 0.42], [0.17, 0.32, 0, 0.34], [-0.17, 0.32, 0, 0.34], [0, 0.32, 0.16, 0.34], [0, 0.32, -0.16, 0.34]]) {
+        g.add(part('sph', 0xffffff, [r, r * 0.9, r], [x, T + y, z]));
+      }
+      g.add(part('box', 0xffc93c, [0.08, 0.06, 0.02], [0, T + 0.08, 0.3], { e: 0x553300 }));
       break;
     case 'bunny':
-      for (const s of [-1, 1]) {
-        g.add(part('sph', 0xffffff, [0.16, 0.6, 0.1], [s * 0.15, 1.75, 0], { r: [0, 0, -s * 0.15] }));
-        g.add(part('sph', 0xffb3c7, [0.08, 0.42, 0.04], [s * 0.15, 1.75, 0.04], { r: [0, 0, -s * 0.15] }));
+      // หูกระต่ายขาว ด้านในชมพู ที่คาดผมชมพู
+      {
+        // ที่คาดผม: ครึ่งวงโค้งพาดบนหัว
+        const band = new THREE.Mesh(halfRing, mat(0xff9fc4));
+        band.position.y = T - 0.42;
+        band.castShadow = true;
+        g.add(band);
+      }
+      for (const sd of [-1, 1]) {
+        g.add(part('sph', 0xffffff, [0.18, 0.66, 0.12], [sd * 0.16, T + 0.3, 0], { r: [0, 0, -sd * 0.2] }));
+        g.add(part('sph', 0xff9fc4, [0.09, 0.48, 0.05], [sd * 0.16, T + 0.3, 0.045], { r: [0, 0, -sd * 0.2] }));
       }
       break;
     case 'horns':
-      for (const s of [-1, 1]) g.add(part('cone', 0xd62828, [0.13, 0.36, 0.13], [s * 0.2, 1.6, 0], { r: [0, 0, -s * 0.45] }));
+      // เขาปีศาจสีม่วงโค้งออกด้านข้าง (ต่อ 2 ท่อนให้ดูโค้ง)
+      for (const sd of [-1, 1]) {
+        g.add(part('cone', 0x8e3ff0, [0.17, 0.28, 0.17], [sd * 0.2, T + 0.08, 0], { r: [0, 0, -sd * 0.55], e: 0x22004a }));
+        g.add(part('cone', 0xb06bff, [0.1, 0.24, 0.1], [sd * 0.33, T + 0.26, 0], { r: [0, 0, -sd * 1.05], e: 0x22004a }));
+      }
       break;
     case 'halo':
-      g.add(part('tor', 0xffe066, [0.55, 0.55, 0.55], [0, 1.82, 0], { r: [Math.PI / 2, 0, 0], e: 0xffb000 }));
+      // วงแหวนทองเรืองแสงลอยเหนือหัว
+      g.add(part('tor', 0xffe066, [0.6, 0.6, 0.8], [0, T + 0.32, 0], { r: [Math.PI / 2, 0, 0], e: 0xffb000 }));
+      for (const [x, z] of [[0.3, 0], [-0.21, 0.21], [0, -0.3]]) g.add(part('sph', 0xfffbe0, [0.04, 0.04, 0.04], [x, T + 0.36, z], { e: 0xffee88 }));
       break;
     case 'crown':
-      g.add(part('cyl', 0xffc93c, [0.55, 0.2, 0.55], [0, 1.56, 0]));
+      // มงกุฎทอง 5 แฉก อัญมณีแดง ฟ้า เขียว ไข่มุกบนยอด
+      g.add(part('cyl', 0xffc93c, [0.58, 0.2, 0.58], [0, T + 0.06, 0]));
       for (let i = 0; i < 5; i++) {
         const a = (i / 5) * Math.PI * 2;
-        g.add(part('cone', 0xffc93c, [0.1, 0.18, 0.1], [Math.sin(a) * 0.22, 1.74, Math.cos(a) * 0.22]));
+        const x = Math.sin(a) * 0.23;
+        const z = Math.cos(a) * 0.23;
+        g.add(part('cone', 0xffc93c, [0.12, 0.22, 0.12], [x, T + 0.26, z]));
+        g.add(part('sph', 0xfff6e0, [0.05, 0.05, 0.05], [x * 1.02, T + 0.38, z * 1.02]));
       }
-      g.add(part('sph', 0xe63946, [0.09, 0.09, 0.05], [0, 1.56, 0.27]));
+      g.add(part('sph', 0xe63946, [0.1, 0.1, 0.05], [0, T + 0.06, 0.29], { e: 0x330000 }));
+      g.add(part('sph', 0x3a86ff, [0.07, 0.07, 0.04], [0.2, T + 0.06, 0.2], { e: 0x001133 }));
+      g.add(part('sph', 0x2ecc71, [0.07, 0.07, 0.04], [-0.2, T + 0.06, 0.2], { e: 0x003311 }));
       break;
     default:
       break;

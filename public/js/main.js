@@ -1,6 +1,7 @@
 import { Game } from './game.js';
 import { Input } from './input.js';
-import { COLORS, HATS, CHARACTERS, loadCharacters } from './character.js';
+import { COLORS, HATS, CHARACTERS, loadCharacters, isCharLoaded } from './character.js';
+import { hatThumb, charThumb } from './thumbs.js';
 import { MAPS } from './maps.js';
 import { sfx, unlockAudio } from './audio.js';
 import { IS_APP, serverUrl, setServerUrl, GOOGLE_CLIENT_ID, GOOGLE_ORIGINS } from './config.js';
@@ -86,6 +87,7 @@ game.setPreviewSkin(save.skin);
 loadCharacters().then(() => {
   game.setPreviewSkin(save.skin);
   game.refreshCharacters();
+  if (!$('#shop').classList.contains('hidden')) renderShop();
 });
 if (new URLSearchParams(location.search).has('debug')) window.HT = { game, input };
 
@@ -173,20 +175,37 @@ function owns(kind, id, price) {
 }
 function renderShop() {
   updateCoins();
-  const mk = (kind, list, box, visual) => {
+  const mk = (kind, list, box, countEl, visual) => {
     box.innerHTML = '';
-    for (const [id, it] of Object.entries(list)) {
+    const entries = Object.entries(list);
+    if (countEl) countEl.textContent = `ทั้งหมด ${entries.length} แบบ`;
+    for (const [id, it] of entries) {
       const owned = owns(kind, id, it.price);
       const equipped = save.skin[kind] === id;
       const el = document.createElement('button');
-      el.className = `shop-item${equipped ? ' equipped' : ''}`;
-      el.append(visual(id, it));
+      el.className = `shop-item${equipped ? ' equipped' : ''}${owned ? '' : ' locked'}`;
+      const thumb = document.createElement('div');
+      thumb.className = 'thumb';
+      thumb.append(visual(id, it));
       const name = document.createElement('div');
+      name.className = 'nm';
       name.textContent = it.name;
-      const price = document.createElement('div');
-      price.className = 'price';
-      price.textContent = equipped ? '✔ ใส่อยู่' : owned ? 'กดเพื่อใส่' : `🪙 ${it.price}`;
-      el.append(name, price);
+      const foot = document.createElement('div');
+      foot.className = 'foot';
+      if (equipped) foot.textContent = '✓ ใส่อยู่';
+      else if (owned) foot.textContent = 'กดเพื่อใส่';
+      else {
+        const coin = document.createElement('span');
+        coin.className = 'coin-ic';
+        foot.append(coin, document.createTextNode(` ${it.price}`));
+      }
+      el.append(thumb, name, foot);
+      if (equipped) {
+        const check = document.createElement('span');
+        check.className = 'check';
+        check.textContent = '✓';
+        el.append(check);
+      }
       el.addEventListener('click', () => {
         if (!owned) {
           if (save.coins < it.price) { toast('เหรียญไม่พอ ไปเล่นเก็บเพิ่มก่อนนะ!'); return; }
@@ -209,24 +228,36 @@ function renderShop() {
       box.append(el);
     }
   };
-  mk('char', CHARACTERS, $('#shopChars'), (id, it) => {
-    const d = document.createElement('div');
-    d.className = 'ic';
-    d.textContent = it.icon;
-    return d;
-  });
-  mk('color', COLORS, $('#shopColors'), (id, it) => {
+  // รูปไอคอน: วาดจากโมเดล 3D จริง (ถ้าวาดไม่ได้ ใช้อีโมจิแทน)
+  const img = (url, fallback) => {
+    if (!url) {
+      const d = document.createElement('div');
+      d.className = 'ic';
+      d.textContent = fallback;
+      return d;
+    }
+    const im = document.createElement('img');
+    im.src = url;
+    im.alt = '';
+    return im;
+  };
+  const safe = (fn) => { try { return fn(); } catch { return null; } };
+  mk('char', CHARACTERS, $('#shopChars'), $('#cntChars'), (id, it) => img(
+    (id === 'blob' || isCharLoaded(id)) ? safe(() => charThumb(id)) : null, it.icon,
+  ));
+  mk('color', COLORS, $('#shopColors'), $('#cntColors'), (id, it) => {
     const d = document.createElement('div');
     d.className = 'sw';
     d.style.background = `#${it.hex.toString(16).padStart(6, '0')}`;
     return d;
   });
-  const HAT_ICON = { none: '🚫', party: '🥳', cap: '🧢', chef: '👨‍🍳', bunny: '🐰', horns: '😈', halo: '😇', crown: '👑' };
-  mk('hat', HATS, $('#shopHats'), (id) => {
-    const d = document.createElement('div');
-    d.className = 'ic';
-    d.textContent = HAT_ICON[id] || '🎩';
-    return d;
+  mk('hat', HATS, $('#shopHats'), $('#cntHats'), (id) => {
+    if (id === 'none') {
+      const d = document.createElement('div');
+      d.className = 'none-ic';
+      return d;
+    }
+    return img(safe(() => hatThumb(id)), '🎩');
   });
 }
 
