@@ -10,7 +10,7 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
 // ---------- เซฟข้อมูลผู้เล่น (เหรียญ/สกิน) ในเครื่อง ----------
-const DEFAULT_SAVE = { coins: 0, owned: [], skin: { char: 'blob', color: 'mint', hat: 'none' }, name: '' };
+const DEFAULT_SAVE = { coins: 2000, owned: [], skin: { char: 'blob', color: 'mint', hat: 'none' }, name: '' };
 const save = (() => {
   try {
     return { ...DEFAULT_SAVE, ...JSON.parse(localStorage.getItem('ht_save') || '{}') };
@@ -19,6 +19,13 @@ const save = (() => {
   }
 })();
 save.skin = { ...DEFAULT_SAVE.skin, ...save.skin };
+// เติมทุนเริ่มต้นให้เซฟเก่าครั้งเดียว และบันทึกทันทีเพื่อไม่เติมซ้ำหลังซื้อของ
+if (save.startingCoinsAmount !== DEFAULT_SAVE.coins) {
+  save.coins = Math.max(DEFAULT_SAVE.coins, Number(save.coins) || 0);
+  save.startingCoinsGranted = true;
+  save.startingCoinsAmount = DEFAULT_SAVE.coins;
+  try { localStorage.setItem('ht_save', JSON.stringify(save)); } catch { /* ignore */ }
+}
 function persist() {
   try { localStorage.setItem('ht_save', JSON.stringify(save)); } catch { /* ignore */ }
   syncSave();

@@ -36,6 +36,8 @@ export function sanitizeSave(d) {
   const coins = Math.floor(Number(d.coins));
   return {
     coins: Number.isFinite(coins) ? Math.min(10_000_000, Math.max(0, coins)) : 0,
+    startingCoinsGranted: d.startingCoinsGranted === true,
+    startingCoinsAmount: d.startingCoinsAmount === 2000 ? 2000 : 0,
     owned: Array.isArray(d.owned) ? [...new Set(d.owned.map((o) => str(o, 40)).filter(Boolean))].slice(0, 100) : [],
     skin: {
       char: str(d.skin?.char, 16) || 'blob',
