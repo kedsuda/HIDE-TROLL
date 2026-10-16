@@ -398,7 +398,7 @@ function renderLobby() {
   $('#mapSelect').disabled = !isHost;
   $('#maxSelect2').disabled = !isHost;
   $('#btnStart').disabled = !isHost;
-  $('#btnStart').textContent = room.players.length === 1 ? '🧪 เริ่มโหมดฝึกซ้อม' : '▶ เริ่มเกม';
+  $('#btnStart').textContent = room.players.length === 1 ? '🧪 เริ่มเกม' : '▶ เริ่มเกม';
   $('#lobbyHint').textContent = isHost
     ? (room.players.length === 1 ? 'ชวนเพื่อนด้วยรหัสห้องหรือลิงก์ — ต้องมี 2 คนขึ้นไปถึงจะมีฝ่ายล่า' : 'ระบบจะสุ่มฝ่ายล่าให้อัตโนมัติ')
     : 'รอหัวห้องกดเริ่มเกม…';
