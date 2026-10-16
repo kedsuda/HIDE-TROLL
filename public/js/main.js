@@ -125,7 +125,12 @@ for (const m of $$('.modal')) {
 
 // ---------- ทำงานแบบออฟไลน์บางส่วน (service worker) ----------
 if (!IS_APP && 'serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // มีเวอร์ชันใหม่ขึ้นเซิร์ฟเวอร์ → โหลดหน้าใหม่ครั้งเดียวให้เห็นของใหม่ทันที (ยกเว้นกำลังเล่นอยู่)
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController && !room) location.reload();
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 }
 
 // ---------- ร้านสกิน ----------
