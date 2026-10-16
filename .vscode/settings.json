@@ -1,5 +1,0 @@
-{
-  // ให้ส่วนเสริม Java ของ VS Code ใช้ JDK 17 เปิดโปรเจกต์ Android (Gradle 8.2.1 ไม่รองรับ Java 25)
-  "java.import.gradle.java.home": "C:/Program Files/Eclipse Adoptium/jdk-17.0.16.8-hotspot",
-  "java.configuration.updateBuildConfiguration": "automatic"
-}
