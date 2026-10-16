@@ -9,6 +9,8 @@ export const CHARACTERS = {
   tuxedo: { name: 'ทักซิโด้แซม', icon: '🐧', price: 0, file: 'models/tuxedo.glb', yaw: 0 },
   duo: { name: 'ดูโอ้', icon: '🦉', price: 0, file: 'models/duo.glb', yaw: 0 },
   porter: { name: 'แมวพอร์เตอร์', icon: '🐱', price: 0, file: 'models/porter.glb', yaw: 0 },
+  doraemon: { name: 'โดราเอมอน', icon: '🔔', price: 0, file: 'models/doraemon.glb', yaw: 0 },
+  ods: { name: 'กวางน้อย', icon: '🦌', price: 0, file: 'models/ods.glb', yaw: 0 },
 };
 const CHAR_HEIGHT = 1.5;
 const templates = new Map();
