@@ -9,6 +9,8 @@
   <title>HIDE &amp; TROLL — ซ่อนหาแปลงร่าง</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="HIDE & TROLL">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -210,44 +212,67 @@
   <div id="getapp" class="modal hidden">
     <div class="panel getapp-panel">
       <h2>📲 เล่นบนโทรศัพท์</h2>
+
+      <div id="installedNote" class="dl-option ok hidden">✅ ติดตั้งแล้ว — เปิดเกมจากไอคอนบนหน้าจอได้เลย</div>
+
       <div id="qrBox" class="qr-box hidden">
         <div id="qr" class="qr"></div>
         <div>
           <b>สแกน QR ด้วยกล้องมือถือ</b>
-          <p class="small muted">เพื่อเปิดหน้านี้บนโทรศัพท์ แล้วกดดาวน์โหลด/ติดตั้งจากในมือถือ</p>
+          <p class="small muted">เพื่อเปิดหน้านี้บนโทรศัพท์ แล้วกดปุ่มนี้อีกครั้งในมือถือ</p>
           <code id="qrUrl" class="qr-url"></code>
         </div>
       </div>
 
-      <div class="dl-option">
-        <div class="dl-title">🤖 Android</div>
-        <a id="apkLink" class="btn primary big dl-btn" href="download/hide-and-troll.apk" download="hide-and-troll.apk">⬇️ ดาวน์โหลดแอป (APK 3 MB)</a>
+      <div id="inAppOption" class="dl-option warn hidden">
+        <div class="dl-title">⚠️ กำลังเปิดในแอปแชต (LINE / Facebook ฯลฯ)</div>
+        <p class="small">ติดตั้งจากในนี้ไม่ได้ ต้องเปิดในเบราว์เซอร์ก่อน</p>
+        <a id="btnOpenBrowser" class="btn primary big dl-btn" href="#">🌐 เปิดในเบราว์เซอร์</a>
+        <p id="inAppIosHint" class="small hidden">กดปุ่ม <b>⋯</b> หรือ <b>⬆️</b> แล้วเลือก <b>"เปิดใน Safari"</b></p>
+        <button id="btnCopyLink" class="btn big">📋 คัดลอกลิงก์ไปเปิดเอง</button>
+      </div>
+
+      <div id="pwaOption" class="dl-option" data-os="android desktop">
+        <div class="dl-title">⚡ ติดตั้งเป็นแอป <span class="tag-rec">แนะนำ</span></div>
+        <p class="small muted">ไม่ต้องโหลดไฟล์ • ไม่มีคำเตือน Play Protect • อัปเดตอัตโนมัติ</p>
+        <button id="btnInstallPwa" class="btn primary big">➕ เพิ่มเกมลงหน้าจอ</button>
+        <ol id="pwaSteps" class="small steps hidden">
+          <li>กดปุ่ม <b>⋮</b> มุมขวาบนของ Chrome</li>
+          <li>เลือก <b>"ติดตั้งแอป"</b> หรือ <b>"เพิ่มลงในหน้าจอหลัก"</b></li>
+          <li>กด <b>"ติดตั้ง"</b> / <b>"เพิ่ม"</b> — ไอคอนเกมจะอยู่บนหน้าจอ</li>
+        </ol>
+      </div>
+
+      <div id="apkOption" class="dl-option" data-os="android desktop">
+        <div class="dl-title">🤖 แอป Android (ไฟล์ APK)</div>
+        <a id="apkLink" class="btn big dl-btn" href="download/hide-and-troll.apk" download="hide-and-troll.apk">⬇️ ดาวน์โหลด APK (3 MB)</a>
         <p class="small muted">เปิดไฟล์ที่โหลดมา → ถ้ามือถือถาม ให้กด "อนุญาตให้ติดตั้งจากแหล่งนี้" → ติดตั้ง</p>
         <details class="pp-help">
-          <summary>⚠️ ขึ้นว่า "แอปไม่ปลอดภัย" / Play Protect บล็อก?</summary>
-          <p class="small">เป็นเพราะแอปไม่ได้มาจาก Play Store (ไม่ใช่ไวรัส) ทำแบบนี้:</p>
+          <summary>⚠️ ขึ้นว่า "แอปถูกบล็อก" / Play Protect?</summary>
+          <p class="small">เพราะแอปไม่ได้มาจาก Play Store และ Google ยังไม่รู้จักผู้พัฒนา (ไม่ได้แปลว่ามีไวรัส)</p>
           <ol class="small">
-            <li>กด <b>"รายละเอียดเพิ่มเติม"</b> (More details) ในหน้าต่างเตือน</li>
-            <li>กด <b>"ติดตั้งต่อไป"</b> / <b>"ติดตั้งโดยไม่สแกน"</b> (Install anyway)</li>
+            <li>กด <b>"รายละเอียดเพิ่มเติม"</b> ในหน้าต่างเตือน</li>
+            <li>ถ้ามีปุ่ม <b>"ติดตั้งต่อไป"</b> ให้กดได้เลย</li>
           </ol>
-          <p class="small">ถ้ายังถูกบล็อก ให้อ่านเหตุผลใน "รายละเอียดเพิ่มเติม" ก่อน — ไม่แนะนำให้ปิด Play Protect โดยไม่รู้สาเหตุ</p>
-          <p class="small">หรือไม่ต้องติดตั้งเลย: เล่นผ่าน Chrome ในมือถือได้ทันที</p>
+          <p class="small">ถ้าไม่มีปุ่มนี้ ใช้ <b>"⚡ ติดตั้งเป็นแอป"</b> ด้านบนแทน — ไม่แนะนำให้ปิด Play Protect</p>
         </details>
         <p id="apkServerNote" class="small hidden"></p>
       </div>
 
-      <div id="pwaOption" class="dl-option hidden">
-        <div class="dl-title">⚡ ติดตั้งแบบเร็ว (ไม่ต้องโหลดไฟล์)</div>
-        <button id="btnInstallPwa" class="btn big">➕ เพิ่มไอคอนเกมลงหน้าจอ</button>
+      <div id="iosOption" class="dl-option" data-os="ios desktop">
+        <div class="dl-title">🍎 iPhone / iPad</div>
+        <button id="btnIosGuide" class="btn primary big">➕ เพิ่มเกมลงหน้าจอโฮม</button>
+        <ol id="iosSteps" class="small steps hidden">
+          <li>ต้องเปิดเว็บนี้ด้วย <b>Safari</b></li>
+          <li>กดปุ่มแชร์ <b>⬆️</b> ที่แถบล่าง (iOS ใหม่: กด <b>⋯</b> ก่อน แล้วกด <b>แชร์</b>)</li>
+          <li>เลื่อนลง เลือก <b>"เพิ่มไปยังหน้าจอโฮม"</b> → กด <b>"เพิ่ม"</b></li>
+        </ol>
       </div>
 
-      <div class="dl-option">
-        <div class="dl-title">🍎 iPhone / iPad</div>
-        <p class="small muted">เปิดเว็บนี้ด้วย <b>Safari</b> → กดปุ่มแชร์ <b>⬆️</b> → เลือก <b>"เพิ่มไปยังหน้าจอโฮม"</b></p>
-      </div>
       <button class="btn ghost big" data-close>ปิด</button>
     </div>
   </div>
+  <div id="iosArrow" class="ios-arrow hidden">⬇️<span>กดปุ่มแชร์ตรงนี้</span></div>
 
   <div id="toast" class="toast"></div>
 

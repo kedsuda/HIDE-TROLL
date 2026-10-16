@@ -112,6 +112,7 @@ function openModal(id) {
 }
 function closeModal(el) {
   el.classList.add('hidden');
+  $('#iosArrow').classList.add('hidden');
   if (inGame && $('#pause').classList.contains('hidden')) input.enabled = true;
 }
 for (const b of $$('[data-open]')) b.addEventListener('click', () => { sfx.click(); openModal(b.dataset.open); });
@@ -125,22 +126,46 @@ let installPrompt = null;
 if (!IS_APP && 'serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+const UA = navigator.userAgent;
+const OS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  ? 'ios' : /Android/i.test(UA) ? 'android' : 'desktop';
+const IN_APP = /Line\/|FBAN|FBAV|FB_IAB|Instagram|Messenger|TikTok|; wv\)/i.test(UA);
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches
+  || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   installPrompt = e;
-  $('#pwaOption').classList.remove('hidden');
 });
 window.addEventListener('appinstalled', () => {
   installPrompt = null;
-  $('#pwaOption').classList.add('hidden');
   toast('ติดตั้งแล้ว! เปิดเกมได้จากไอคอนบนหน้าจอ 🎉');
+  setupGetApp();
 });
 $('#btnInstallPwa').addEventListener('click', async () => {
-  if (!installPrompt) return;
-  installPrompt.prompt();
-  await installPrompt.userChoice.catch(() => {});
-  installPrompt = null;
-  $('#pwaOption').classList.add('hidden');
+  sfx.click();
+  if (installPrompt) {
+    installPrompt.prompt();
+    const choice = await installPrompt.userChoice.catch(() => null);
+    installPrompt = null;
+    if (choice?.outcome === 'accepted') return;
+  }
+  // เบราว์เซอร์ไม่มีปุ่มติดตั้งอัตโนมัติ → แสดงวิธีทำเอง
+  $('#pwaSteps').classList.remove('hidden');
+  toast('ทำตามขั้นตอนด้านล่างได้เลย 👇');
+});
+$('#btnIosGuide').addEventListener('click', () => {
+  sfx.click();
+  $('#iosSteps').classList.remove('hidden');
+  if (OS === 'ios' && !IN_APP) $('#iosArrow').classList.remove('hidden');
+});
+$('#btnCopyLink').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(location.href);
+    toast('คัดลอกลิงก์แล้ว — ไปวางในเบราว์เซอร์ได้เลย');
+  } catch {
+    toast(location.href);
+  }
 });
 if (IS_APP) $('#btnGetApp').classList.add('hidden');
 
@@ -169,7 +194,35 @@ async function phoneUrl() {
   }
 }
 
+// ลิงก์เปิดหน้านี้ในเบราว์เซอร์จริง (ออกจากเบราว์เซอร์ในแอป LINE/Facebook)
+function externalBrowserUrl() {
+  if (/Line\//i.test(UA)) {
+    const u = new URL(location.href);
+    u.searchParams.set('openExternalBrowser', '1');
+    return u.href;
+  }
+  if (OS === 'android') {
+    return `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=${location.protocol.slice(0, -1)};package=com.android.chrome;end`;
+  }
+  return null;
+}
+
 async function setupGetApp() {
+  const installed = isStandalone();
+  for (const el of $$('#getapp [data-os]')) {
+    el.classList.toggle('hidden', !el.dataset.os.split(' ').includes(OS) || (installed && el.id !== 'apkOption'));
+  }
+  $('#installedNote').classList.toggle('hidden', !installed);
+  const inApp = IN_APP && OS !== 'desktop';
+  $('#inAppOption').classList.toggle('hidden', !inApp);
+  if (inApp) {
+    const ext = externalBrowserUrl();
+    $('#btnOpenBrowser').classList.toggle('hidden', !ext);
+    $('#inAppIosHint').classList.toggle('hidden', !!ext);
+    if (ext) $('#btnOpenBrowser').href = ext;
+    $('#pwaOption').classList.add('hidden');
+    $('#iosOption').classList.add('hidden');
+  }
   const url = await phoneUrl();
   const note = $('#apkServerNote');
   const secure = url.startsWith('https://');
@@ -177,7 +230,7 @@ async function setupGetApp() {
   note.textContent = secure
     ? `หลังติดตั้ง: ถ้าแอปต่อเซิร์ฟเวอร์ไม่ได้ ให้ใส่ ${url} ในช่อง "🌐 เซิร์ฟเวอร์เกม" ที่หน้าเมนูของแอป`
     : 'แอปเชื่อมต่อได้เฉพาะเซิร์ฟเวอร์ https (เช่นบน Render) — ถ้าทดสอบในวง Wi-Fi ให้เล่นผ่าน Chrome แทน';
-  if (input.touch) return;
+  if (OS !== 'desktop') return;
   $('#qrBox').classList.remove('hidden');
   $('#qrUrl').textContent = url;
   try {
