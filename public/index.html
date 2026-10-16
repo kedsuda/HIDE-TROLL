@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.js" } }</script>
+  <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three-addons/" } }</script>
   <script src="vendor/socket.io/socket.io.min.js"></script>
 </head>
 <body>
@@ -163,7 +163,9 @@
         <h2>🎨 ร้านสกิน</h2>
         <div class="coins">🪙 <b class="coin-val">0</b></div>
       </div>
-      <h3>สีตัวละคร</h3>
+      <h3>ตัวละคร</h3>
+      <div id="shopChars" class="shop-grid"></div>
+      <h3>สีตัวละคร <span class="small muted">(ใช้กับบล็อบ)</span></h3>
       <div id="shopColors" class="shop-grid"></div>
       <h3>หมวก</h3>
       <div id="shopHats" class="shop-grid"></div>

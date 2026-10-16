@@ -1,6 +1,6 @@
 import { Game } from './game.js';
 import { Input } from './input.js';
-import { COLORS, HATS } from './character.js';
+import { COLORS, HATS, CHARACTERS, loadCharacters } from './character.js';
 import { MAPS } from './maps.js';
 import { sfx, unlockAudio } from './audio.js';
 import { IS_APP, serverUrl, setServerUrl } from './config.js';
@@ -9,7 +9,7 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
 // ---------- เซฟข้อมูลผู้เล่น (เหรียญ/สกิน) ในเครื่อง ----------
-const DEFAULT_SAVE = { coins: 0, owned: [], skin: { color: 'mint', hat: 'none' }, name: '' };
+const DEFAULT_SAVE = { coins: 0, owned: [], skin: { char: 'blob', color: 'mint', hat: 'none' }, name: '' };
 const save = (() => {
   try {
     return { ...DEFAULT_SAVE, ...JSON.parse(localStorage.getItem('ht_save') || '{}') };
@@ -17,6 +17,7 @@ const save = (() => {
     return { ...DEFAULT_SAVE };
   }
 })();
+save.skin = { ...DEFAULT_SAVE.skin, ...save.skin };
 function persist() {
   try { localStorage.setItem('ht_save', JSON.stringify(save)); } catch { /* ignore */ }
 }
@@ -72,6 +73,10 @@ const game = new Game($('#c'), input, {
   toast: (t) => toast(t),
 });
 game.setPreviewSkin(save.skin);
+loadCharacters().then(() => {
+  game.setPreviewSkin(save.skin);
+  game.refreshCharacters();
+});
 if (new URLSearchParams(location.search).has('debug')) window.HT = { game, input };
 
 // ---------- UI ทั่วไป ----------
@@ -111,10 +116,14 @@ function openModal(id) {
   $(`#${id}`).classList.remove('hidden');
   if (document.pointerLockElement) document.exitPointerLock();
   input.enabled = false;
-  if (id === 'shop') renderShop();
+  if (id === 'shop') {
+    renderShop();
+    game.setPreviewShift(true);
+  }
 }
 function closeModal(el) {
   el.classList.add('hidden');
+  if (el.id === 'shop') game.setPreviewShift(false);
   if (inGame && $('#pause').classList.contains('hidden')) input.enabled = true;
 }
 for (const b of $$('[data-open]')) b.addEventListener('click', () => { sfx.click(); openModal(b.dataset.open); });
@@ -171,6 +180,12 @@ function renderShop() {
       box.append(el);
     }
   };
+  mk('char', CHARACTERS, $('#shopChars'), (id, it) => {
+    const d = document.createElement('div');
+    d.className = 'ic';
+    d.textContent = it.icon;
+    return d;
+  });
   mk('color', COLORS, $('#shopColors'), (id, it) => {
     const d = document.createElement('div');
     d.className = 'sw';

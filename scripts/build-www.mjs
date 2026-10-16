@@ -14,4 +14,8 @@ mkdirSync('www/vendor/three', { recursive: true });
 mkdirSync('www/vendor/socket.io', { recursive: true });
 cpSync('node_modules/three/build/three.module.js', 'www/vendor/three/three.module.js');
 cpSync('node_modules/socket.io/client-dist/socket.io.min.js', 'www/vendor/socket.io/socket.io.min.js');
+for (const f of ['loaders/GLTFLoader.js', 'utils/SkeletonUtils.js', 'utils/BufferGeometryUtils.js']) {
+  mkdirSync(path.dirname(`www/vendor/three-addons/${f}`), { recursive: true });
+  cpSync(`node_modules/three/examples/jsm/${f}`, `www/vendor/three-addons/${f}`);
+}
 console.log('www/ พร้อมแล้ว');

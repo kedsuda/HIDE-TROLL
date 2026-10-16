@@ -26,6 +26,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const app = express();
 app.use(express.static(path.join(ROOT, 'public')));
 app.use('/vendor/three', express.static(path.join(ROOT, 'node_modules/three/build')));
+app.use('/vendor/three-addons', express.static(path.join(ROOT, 'node_modules/three/examples/jsm')));
 app.use('/vendor/socket.io', express.static(path.join(ROOT, 'node_modules/socket.io/client-dist')));
 app.get('/health', (_req, res) => res.send('ok'));
 
@@ -40,7 +41,9 @@ const num = (v, min, max) => {
   return Math.round(Math.min(max, Math.max(min, n)) * 100) / 100;
 };
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
-const cleanSkin = (s) => ({ color: clean(s?.color, 16) || 'mint', hat: clean(s?.hat, 16) || 'none' });
+const cleanSkin = (s) => ({
+  char: clean(s?.char, 16) || 'blob', color: clean(s?.color, 16) || 'mint', hat: clean(s?.hat, 16) || 'none',
+});
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const shuffle = (arr) => {
   for (let i = arr.length - 1; i > 0; i--) {

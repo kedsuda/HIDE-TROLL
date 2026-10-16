@@ -76,8 +76,10 @@ export class Game {
     pc.aspect = w / h;
     const wide = w / h > 1.15;
     // จอคอม: ตัวละครอยู่กลางจอ / มือถือแนวตั้ง: มองจากสูงขึ้นเพราะเมนูอยู่ด้านล่าง
-    pc.position.set(0, wide ? 1.6 : 2.6, wide ? 5.6 : 7);
-    pc.lookAt(0, wide ? 0.85 : 1.6, 0);
+    // เปิดร้านสกินบนจอคอม: เลื่อนตัวละครไปซ้ายให้เห็นข้างหน้าต่างร้าน
+    const sx = wide && this.previewShift ? 2.1 : 0;
+    pc.position.set(sx, wide ? 1.6 : 2.6, wide ? 5.6 : 7);
+    pc.lookAt(sx, wide ? 0.85 : 1.6, 0);
     pc.updateProjectionMatrix();
   }
 
@@ -100,6 +102,11 @@ export class Game {
     }
     this.previewCam = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
     this.setPreviewSkin({ color: 'mint', hat: 'none' });
+  }
+
+  setPreviewShift(on) {
+    this.previewShift = on;
+    this.resize();
   }
 
   setPreviewSkin(skin) {
@@ -257,6 +264,13 @@ export class Game {
       me.root.add(me.char);
     }
     me.op = 1;
+  }
+
+  // โมเดลตัวละครโหลดเสร็จ → สร้างตัวละครที่เป็นบล็อบชั่วคราวใหม่
+  refreshCharacters() {
+    if (!this.active) return;
+    if (!this.me.prop) this.rebuildMe();
+    for (const r of this.remotes.values()) if (!r.prop) this.rebuildRemote(r);
   }
 
   setMyTeam(team) {

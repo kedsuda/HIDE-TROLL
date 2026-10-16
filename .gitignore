@@ -5,3 +5,6 @@ tools/
 www/
 .vscode/
 release/
+
+# โมเดลตัวละคร (ลิขสิทธิ์ Sketchfab Standard ห้ามแจกไฟล์ดิบในที่สาธารณะ)
+public/models/

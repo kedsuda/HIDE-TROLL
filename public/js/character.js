@@ -1,5 +1,77 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { part, mat } from './props.js';
+
+// ตัวละครให้เลือก (file = โมเดล 3D ใน public/models, yaw = หมุนให้หันหน้าไปทาง +z)
+export const CHARACTERS = {
+  blob: { name: 'บล็อบ', icon: '🟢', price: 0 },
+  tuxedo: { name: 'ทักซิโด้แซม', icon: '🐧', price: 0, file: 'models/tuxedo.glb', yaw: 0 },
+  duo: { name: 'ดูโอ้', icon: '🦉', price: 0, file: 'models/duo.glb', yaw: 0 },
+  porter: { name: 'แมวพอร์เตอร์', icon: '🐱', price: 0, file: 'models/porter.glb', yaw: 0 },
+};
+const CHAR_HEIGHT = 1.5;
+const templates = new Map();
+
+export const isCharLoaded = (id) => templates.has(id);
+
+// โหลดโมเดลทั้งหมดครั้งเดียว แล้วจำขนาด/จุดกึ่งกลางไว้ใช้ตอนสร้างตัวละคร
+export async function loadCharacters() {
+  const loader = new GLTFLoader();
+  await Promise.all(Object.entries(CHARACTERS).filter(([, c]) => c.file).map(async ([id, c]) => {
+    try {
+      const gltf = await loader.loadAsync(c.file);
+      // วัดขนาดจากท่าแรกของแอนิเมชันจริง (ท่าตั้งต้นของโมเดลบางตัวสูงกว่าท่าที่เล่นจริง)
+      if (gltf.animations.length) {
+        const mixer = new THREE.AnimationMixer(gltf.scene);
+        mixer.clipAction(gltf.animations[0]).play();
+        mixer.update(0);
+      }
+      gltf.scene.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(gltf.scene, true);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      templates.set(id, {
+        scene: gltf.scene, clips: gltf.animations,
+        scale: CHAR_HEIGHT / size.y, offset: new THREE.Vector3(-center.x, -box.min.y, -center.z),
+      });
+    } catch (err) {
+      console.warn(`โหลดตัวละคร ${id} ไม่สำเร็จ ใช้บล็อบแทน`, err);
+    }
+  }));
+}
+
+function buildModelChar(id, skin, hunter) {
+  const tpl = templates.get(id);
+  const g = new THREE.Group();
+  const pivot = new THREE.Group();
+  g.add(pivot);
+  const holder = new THREE.Group();
+  holder.scale.setScalar(tpl.scale);
+  holder.rotation.y = CHARACTERS[id].yaw || 0;
+  const model = cloneSkinned(tpl.scene);
+  model.position.copy(tpl.offset);
+  model.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.frustumCulled = false;
+    }
+  });
+  holder.add(model);
+  pivot.add(holder);
+  pivot.add(buildHat(skin.hat));
+  if (hunter) {
+    pivot.add(part('box', 0xff7a00, [0.14, 0.16, 0.55], [0.5, 0.78, 0.22]));
+    pivot.add(part('cyl', 0x33ccff, [0.12, 0.16, 0.12], [0.5, 0.78, 0.54], { r: [Math.PI / 2, 0, 0], e: 0x0a6a8a }));
+  }
+  let mixer = null;
+  if (tpl.clips.length) {
+    mixer = new THREE.AnimationMixer(model);
+    mixer.clipAction(tpl.clips[0]).play();
+  }
+  g.userData.char = { pivot, mixer };
+  return uniqueMaterials(g);
+}
 
 export const COLORS = {
   mint: { name: 'มินต์', hex: 0x5ee6b0, price: 0 },
@@ -66,12 +138,13 @@ function buildHat(hat) {
 // ทำให้วัสดุของตัวละครแยกจากกัน (ปรับความโปร่งใสรายคนได้)
 export function uniqueMaterials(obj) {
   obj.traverse((o) => {
-    if (o.isMesh) o.material = o.material.clone();
+    if (o.isMesh) o.material = Array.isArray(o.material) ? o.material.map((m) => m.clone()) : o.material.clone();
   });
   return obj;
 }
 
 export function buildCharacter(skin = {}, hunter = false) {
+  if (skin.char && skin.char !== 'blob' && templates.has(skin.char)) return buildModelChar(skin.char, skin, hunter);
   const color = (COLORS[skin.color] || COLORS.mint).hex;
   const dark = new THREE.Color(color).multiplyScalar(0.6).getHex();
   const g = new THREE.Group();
@@ -106,6 +179,17 @@ export function buildCharacter(skin = {}, hunter = false) {
 export function animateCharacter(g, t, moving, airborne) {
   const c = g.userData.char;
   if (!c) return;
+  if (c.mixer) {
+    c.mixer.update(Math.min(0.1, Math.max(0, t - (c.lastT ?? t))));
+    c.lastT = t;
+  }
+  if (!c.fl) {
+    // ตัวละครโมเดล 3D: เด้งและโยกตัวตอนเดิน
+    const w = Math.sin(t * 12);
+    c.pivot.position.y = airborne ? 0.05 : moving ? Math.abs(w) * 0.07 : 0;
+    c.pivot.rotation.z = moving && !airborne ? w * 0.07 : 0;
+    return;
+  }
   if (airborne) {
     c.pivot.position.y = 0.05;
     c.pivot.rotation.z = 0;
@@ -123,9 +207,11 @@ export function animateCharacter(g, t, moving, airborne) {
 export function setOpacity(obj, o) {
   obj.traverse((m) => {
     if (!m.isMesh || m.userData.noFade) return;
-    m.material.transparent = o < 1;
-    m.material.opacity = o;
-    m.material.depthWrite = o >= 1;
+    for (const mt of Array.isArray(m.material) ? m.material : [m.material]) {
+      mt.transparent = o < 1;
+      mt.opacity = o;
+      mt.depthWrite = o >= 1;
+    }
   });
 }
 
