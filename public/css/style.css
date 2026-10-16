@@ -126,6 +126,8 @@ kbd {
 #phaseLabel { font-size: 0.8rem; color: var(--muted); }
 #timer { font-size: 1.8rem; font-weight: 800; line-height: 1; }
 #timer.urgent { color: var(--danger); }
+.objective-hud { position: absolute; left: 50%; top: 76px; transform: translateX(-50%); background: rgba(20,10,40,.82); border: 1px solid #ffd166; border-radius: 14px; padding: 7px 14px; color: #ffe29a; font-weight: 700; white-space: nowrap; }
+.objective-button { position: absolute; left: 50%; bottom: 155px; transform: translateX(-50%); border: 1px solid #ffd166; border-radius: 999px; background: #392858; color: #fff1bd; padding: 12px 22px; font-weight: 800; font-size: 1rem; }
 #crosshair {
   position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%);
   border: 3px solid rgba(255, 255, 255, 0.9); border-radius: 50%; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3);

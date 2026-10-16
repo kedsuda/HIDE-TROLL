@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 import { OAuth2Client } from 'google-auth-library';
 import { getSave, putSave, sanitizeSave } from './store.js';
+import { generateMap } from '../public/js/maps.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -85,6 +86,8 @@ class Room {
     this.decoySeq = 0;
     this.traps = new Map();
     this.trapSeq = 0;
+    this.objectiveSeq = 0;
+    this.objectives = new Map();
     this.blackoutUntil = 0;
     this.nextBlackout = Infinity;
     this.hadHunters = false;
@@ -153,6 +156,7 @@ class Room {
       remaining: Math.max(0, this.phaseEndsAt - Date.now()),
       mapId: this.mapId, seed: this.seed,
       decoys: [...this.decoys.values()], traps: [...this.traps.values()], blackout: Math.max(0, this.blackoutUntil - Date.now()),
+      objectives: [...this.objectives.values()],
     };
   }
 
@@ -174,6 +178,7 @@ class Room {
         team: i < hunters ? 'hunter' : 'hider', alive: true, prop: null, state: null,
         cds: {}, invisUntil: 0, hp: 100, stunUntil: 0, earned: 0, catches: 0, taunts: 0,
       });
+      p.starsCollected = 0; p.chestOpened = false; p.objectiveComplete = false;
       p.origTeam = p.team; p.caughtAt = 0; p.choiceMade = false;
     });
     this.roundStarted = Date.now();
@@ -184,6 +189,22 @@ class Room {
     this.mapId = MAP_IDS.includes(this.mapChoice) ? this.mapChoice : pick(MAP_IDS);
     this.seed = Math.floor(Math.random() * 1e9);
     this.decoys.clear();
+    this.objectives.clear();
+    this.objectiveSeq = 0;
+    const map = generateMap(this.mapId, this.seed);
+    const hiderSpawn = map.spawns.hider[0];
+    const candidates = map.props.filter(o => Math.hypot(o.x - hiderSpawn[0], o.z - hiderSpawn[1]) > 8);
+    shuffle(candidates);
+    for (let i = 0; i < Math.min(12, candidates.length); i++) {
+      const o = candidates[i];
+      const id = ++this.objectiveSeq;
+      const angle = Math.atan2(o.z - hiderSpawn[1], o.x - hiderSpawn[0]);
+      const offset = i % 2 ? 2.1 : 2.7;
+      const x = o.x + Math.cos(angle) * offset;
+      const z = o.z + Math.sin(angle) * offset;
+      const kind = i < Math.ceil(Math.min(12, candidates.length) / 2) ? 'star' : 'chest';
+      this.objectives.set(id, { id, kind, x, y: 0.55, z });
+    }
     this.setPhase('hiding', HIDE_TIME);
     this.sys(n === 1
       ? '🧪 โหมดฝึกซ้อม: ลองแปลงร่างและใช้สกิลได้เลย (ไม่ได้เหรียญ)'
@@ -263,6 +284,7 @@ class Room {
     }
     this.decoys.clear();
     this.traps.clear();
+    this.objectives.clear();
     this.phase = 'lobby';
     this.broadcastRoom();
     this.emit('phase', { phase: 'lobby', remaining: 0 });
@@ -283,6 +305,24 @@ class Room {
       x: num(s.p[0], -200, 200), y: num(s.p[1], -50, 50), z: num(s.p[2], -200, 200),
       ry: num(s.ry, -100, 100), pr: num(s.pr, -100, 100), m: s.m ? 1 : 0, a: s.a ? 1 : 0,
     };
+    p.lastStateAt = Date.now();
+  }
+
+  collectObjective(p, id) {
+    if (this.phase !== 'hunting' || p.team !== 'hider' || !p.alive || p.objectiveComplete || !p.state || Date.now() - (p.lastStateAt || 0) > 1000) return;
+    const item = this.objectives.get(Number(id));
+    if (!item || dist(p.state, item) > 2.2 || Number(id) !== item.id) return;
+    if (item.kind === 'star') p.starsCollected = (p.starsCollected || 0) + 1;
+    else p.chestOpened = true;
+    this.objectives.delete(item.id);
+    io.to(p.id).emit('objectiveProgress', { stars: p.starsCollected || 0, chest: !!p.chestOpened });
+    this.emit('objectiveRemove', { id: item.id });
+    if ((p.starsCollected || 0) >= 3 || p.chestOpened) {
+      p.objectiveComplete = true;
+      p.earned += 30;
+      io.to(p.id).emit('objectiveProgress', { stars: p.starsCollected || 0, chest: !!p.chestOpened, complete: true, bonus: 30 });
+      this.sys(`🌟 ${p.name} ทำภารกิจฝ่ายซ่อนสำเร็จ รับโบนัส 30 เหรียญ!`);
+    }
   }
 
   onDisguise(p, key) {
@@ -489,6 +529,7 @@ io.on('connection', (socket) => {
   socket.on('disguise', (k) => { const p = me(); if (p) socket.data.room.onDisguise(p, k); });
   socket.on('shoot', (d) => { const p = me(); if (p) socket.data.room.onShoot(p, d); });
   socket.on('skill', (t, cb) => { const p = me(); if (p) socket.data.room.onSkill(p, t, ack(cb)); });
+  socket.on('collectObjective', (id) => { const p = me(); if (p) socket.data.room.collectObjective(p, id); });
 
   socket.on('chat', (text) => {
     const p = me();

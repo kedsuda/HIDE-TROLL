@@ -56,6 +56,7 @@ export class Game {
     this.decoys = new Map();
     this.effects = [];
     this.traps = new Map();
+    this.objectives = new Map();
     this.blackoutEnd = 0;
     this.roster = new Map();
     this.active = false;
@@ -145,7 +146,7 @@ export class Game {
   }
 
   // ---------- เริ่ม/จบแมตช์ ----------
-  start({ mapId, seed, myId, team, skin, spawnIndex, roster, phase, decoys }) {
+  start({ mapId, seed, myId, team, skin, spawnIndex, roster, phase, decoys, objectives }) {
     this.stop();
     this.myId = myId;
     this.phase = phase;
@@ -165,6 +166,7 @@ export class Game {
     this.scene.add(this.me.root);
     this.rebuildMe();
     for (const d of decoys || []) this.addDecoy(d, true);
+    for (const o of objectives || []) this.addObjective(o);
     this.lastSend = 0;
     this.lastShot = 0;
     this.lastTarget = 0;
@@ -180,6 +182,7 @@ export class Game {
     this.decoys.clear();
     this.effects = [];
     this.traps = new Map();
+    this.objectives.clear();
     this.blackoutEnd = 0;
     this.scene = null;
     this.world = null;
@@ -187,6 +190,27 @@ export class Game {
     this.me = null;
     this.setHint('');
   }
+
+  addObjective(item) {
+    if (!this.active || this.objectives.has(item.id)) return;
+    const g = new THREE.Group();
+    if (item.kind === 'star') {
+      const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), new THREE.MeshStandardMaterial({ color: 0xffd43b, emissive: 0x8a5a00, emissiveIntensity: 1.1, metalness: 0.25, roughness: 0.3 }));
+      star.position.y = 0.65; g.add(star);
+      g.add(new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.035, 6, 24), mat(0xffe88a)));
+    } else {
+      g.add(part('box', 0x9b5a25, [0.85, 0.55, 0.65], [0, 0.3, 0]));
+      g.add(part('box', 0xffd166, [0.18, 0.62, 0.72], [0, 0.3, 0], { e: 0x9b6400 }));
+      g.add(part('box', 0xffd166, [0.88, 0.13, 0.68], [0, 0.62, 0], { e: 0x9b6400 }));
+    }
+    g.position.set(item.x, item.y, item.z);
+    g.userData.objectiveId = item.id;
+    g.userData.kind = item.kind;
+    this.scene.add(g); this.objectives.set(item.id, g);
+  }
+
+  removeObjective({ id }) { const obj = this.objectives.get(id); if (obj) this.scene?.remove(obj); this.objectives.delete(id); }
+  collectObjective(id) { this.hooks.collectObjective(id); }
 
   buildWorld(mapId, seed) {
     const map = generateMap(mapId, seed);
@@ -547,6 +571,13 @@ export class Game {
     this.updateLocal(dt, t, now);
     this.updateRemotes(dt, t);
     this.updateEffects(dt);
+    for (const [id, obj] of this.objectives) {
+      obj.rotation.y += dt * 1.1;
+      obj.position.y = 0.55 + Math.sin(t * 2.5 + id) * 0.13;
+    }
+    const nearby = [...this.objectives.values()].find(o => o.position.distanceTo(this.me.pos) < 2.2);
+    const canCollect = this.me.team === 'hider' && this.me.alive && this.phase === 'hunting' && !!nearby;
+    this.hooks.objectiveNearby(canCollect, nearby?.userData.kind);
     if (this.ferris) this.ferris.rotation.z += dt * 0.08;
     this.updateCamera();
     this.scene.traverse(o => {
@@ -681,7 +712,11 @@ export class Game {
         break;
       case 'action':
         if (me.team === 'hunter') this.shoot(now);
-        else if (hider) this.disguise();
+        else if (hider && this.phase === 'hunting') {
+          const item = [...this.objectives.values()].find(o => o.position.distanceTo(me.pos) < 2.2);
+          if (item) this.collectObjective(item.userData.objectiveId);
+          else this.disguise();
+        } else if (hider) this.disguise();
         break;
       case 'revert':
         if (hider && me.prop) this.setMyProp(null);

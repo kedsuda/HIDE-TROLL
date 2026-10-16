@@ -89,6 +89,11 @@ const game = new Game($('#c'), input, {
       }
     });
   },
+  collectObjective: (id) => socket.emit('collectObjective', id),
+  objectiveNearby: (nearby, kind) => {
+    $('#collectObjective').classList.toggle('hidden', !nearby);
+    if (nearby) $('#collectObjective').textContent = `เก็บ ${kind === 'star' ? '⭐ ดาว' : '🧰 หีบสมบัติ'} (E)`;
+  },
   hint: (h) => { $('#hint').textContent = h; },
   toast: (t) => toast(t),
 });
@@ -492,9 +497,19 @@ function renderSkills(team) {
   badge.className = `badge ${team}`;
   badge.textContent = team === 'ghost' ? '👻 ผี' : team === 'caught' ? '💀 ถูกจับ' : team === 'hunter' ? '🔦 ฝ่ายล่า' : '🫥 ฝ่ายซ่อน';
   $('#trapControls').classList.toggle('hidden', team !== 'hider');
+  $('#objectiveHud').classList.toggle('hidden', team !== 'hider');
+  $('#collectObjective').classList.add('hidden');
+}
+
+function updateObjectiveProgress(d) {
+  const el = $('#objectiveHud');
+  if (d.complete) el.textContent = `✅ ภารกิจสำเร็จ! โบนัส +${d.bonus || 30} 🪙`;
+  else if (d.chest) el.textContent = `🌟 เก็บดาว ${d.stars || 0}/3 หรือเปิดหีบสมบัติ • โบนัส 30 🪙`;
+  else el.textContent = `🌟 ภารกิจระหว่างซ่อน: เก็บดาว ${d.stars || 0}/3 หรือเปิดหีบสมบัติ • โบนัส 30 🪙`;
 }
 
 $('#touch').classList.toggle('hidden', !input.touch);
+$('#collectObjective').addEventListener('click', () => input.push('action'));
 for (const b of $$('#touch [data-act]')) {
   b.addEventListener('touchstart', (e) => { e.preventDefault(); input.push(b.dataset.act); }, { passive: false });
 }
@@ -503,10 +518,11 @@ function startGame(info) {
   const me = room.players.find((p) => p.id === socket.id);
   if (!me) return;
   myTeam = me.team;
+  if (me.team === 'hider') updateObjectiveProgress({ stars: 0, chest: false });
   const teamIds = room.players.filter((p) => p.team === me.team).map((p) => p.id).sort();
   game.start({
     mapId: info.mapId, seed: info.seed, myId: socket.id, team: me.team, skin: me.skin,
-    spawnIndex: Math.max(0, teamIds.indexOf(me.id)), roster: room.players, phase: info.phase, decoys: info.decoys,
+    spawnIndex: Math.max(0, teamIds.indexOf(me.id)), roster: room.players, phase: info.phase, decoys: info.decoys, objectives: info.objectives,
   });
   inGame = true;
   cooldowns = {};
@@ -521,6 +537,7 @@ function startGame(info) {
 
 function stopGame() {
   $('#trapControls').classList.add('hidden');
+  $('#collectObjective').classList.add('hidden');
   inGame = false;
   myTeam = null;
   input.enabled = false;
@@ -808,6 +825,8 @@ socket.on('room', (r) => {
 });
 
 socket.on('phase', onPhase);
+socket.on('objectiveRemove', d => game.removeObjective(d));
+socket.on('objectiveProgress', updateObjectiveProgress);
 socket.on('snap', (s) => game.applySnapshot(s));
 socket.on('chat', addChat);
 socket.on('shot', (d) => game.onShot(d));
