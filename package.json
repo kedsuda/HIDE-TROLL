@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "node --watch server/server.js",
+    "build": "node scripts/build-www.mjs",
     "build:www": "node scripts/build-www.mjs",
     "cap:sync": "npm run build:www && node node_modules/@capacitor/cli/bin/capacitor sync android",
     "apk": "npm run cap:sync && cd android && gradlew.bat assembleRelease"

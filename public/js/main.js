@@ -172,8 +172,11 @@ async function phoneUrl() {
 async function setupGetApp() {
   const url = await phoneUrl();
   const note = $('#apkServerNote');
+  const secure = url.startsWith('https://');
   note.classList.toggle('hidden', url === DEFAULT_SERVER);
-  note.textContent = `หลังติดตั้ง: ถ้าแอปต่อเซิร์ฟเวอร์ไม่ได้ ให้ใส่ ${url} ในช่อง "🌐 เซิร์ฟเวอร์เกม" ที่หน้าเมนูของแอป`;
+  note.textContent = secure
+    ? `หลังติดตั้ง: ถ้าแอปต่อเซิร์ฟเวอร์ไม่ได้ ให้ใส่ ${url} ในช่อง "🌐 เซิร์ฟเวอร์เกม" ที่หน้าเมนูของแอป`
+    : 'แอปเชื่อมต่อได้เฉพาะเซิร์ฟเวอร์ https (เช่นบน Render) — ถ้าทดสอบในวง Wi-Fi ให้เล่นผ่าน Chrome แทน';
   if (input.touch) return;
   $('#qrBox').classList.remove('hidden');
   $('#qrUrl').textContent = url;
