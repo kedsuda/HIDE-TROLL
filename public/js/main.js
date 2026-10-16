@@ -247,31 +247,65 @@ function renderShop() {
 // ---------- เมนูหลัก ----------
 $('#nameInput').value = save.name;
 $('#nameInput').addEventListener('change', () => { save.name = $('#nameInput').value.trim(); persist(); });
-const urlRoom = new URLSearchParams(location.search).get('room');
-if (urlRoom) $('#codeInput').value = urlRoom.toUpperCase().slice(0, 4);
+// พิมพ์รหัสด้วยคีย์บอร์ดภาษาไทย (เกษมณี) ก็ได้: แปลงเป็นตัวอังกฤษบนปุ่มเดียวกัน
+const THAI_KEYS = {
+  'ๆ': 'Q', 'ไ': 'W', 'ำ': 'E', 'พ': 'R', 'ะ': 'T', 'ั': 'Y', 'ี': 'U', 'ร': 'I', 'น': 'O', 'ย': 'P',
+  'ฟ': 'A', 'ห': 'S', 'ก': 'D', 'ด': 'F', 'เ': 'G', '้': 'H', '่': 'J', 'า': 'K', 'ส': 'L',
+  'ผ': 'Z', 'ป': 'X', 'แ': 'C', 'อ': 'V', 'ิ': 'B', 'ื': 'N', 'ท': 'M',
+  '/': '2', '-': '3', 'ภ': '4', 'ถ': '5', 'ุ': '6', 'ึ': '7', 'ค': '8', 'ต': '9',
+};
+function normalizeCode(s) {
+  return [...String(s)].map((ch) => THAI_KEYS[ch] || ch).join('').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+}
+$('#codeInput').addEventListener('input', (e) => {
+  const v = normalizeCode(e.target.value);
+  if (v !== e.target.value) e.target.value = v;
+});
 
-function menuMsg(t) { $('#menuMsg').textContent = t; }
+const urlRoom = new URLSearchParams(location.search).get('room');
+if (urlRoom) $('#codeInput').value = normalizeCode(urlRoom);
+
+// ข้อความเตือนแสดงทั้งในเมนูและแบบลอยกลางจอ (จอมือถือแนวนอนอาจมองไม่เห็นด้านล่างเมนู)
+function menuMsg(t) {
+  $('#menuMsg').textContent = t;
+  if (t) toast(t);
+}
+
+// ส่งคำขอพร้อมสถานะ "กำลัง…" และตัดจบถ้าเซิร์ฟเวอร์ไม่ตอบ
+function request(btn, busyText, ev, data, onFail) {
+  if (btn.disabled) return;
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = busyText;
+  if (!socket.connected) toast('กำลังปลุกเซิร์ฟเวอร์… อาจใช้เวลาสักครู่ ⏳');
+  socket.timeout(45000).emit(ev, data, (err, res) => {
+    btn.disabled = false;
+    btn.textContent = label;
+    if (err) menuMsg('เซิร์ฟเวอร์ไม่ตอบ ลองใหม่อีกครั้ง');
+    else if (!res?.ok) menuMsg(res?.msg || onFail);
+    else menuMsg('');
+  });
+}
 
 $('#btnCreate').addEventListener('click', () => {
   unlockAudio();
   sfx.click();
   save.name = $('#nameInput').value.trim();
   persist();
-  socket.emit('createRoom', { name: myName(), skin: save.skin, maxPlayers: $('#maxSelect').value }, (res) => {
-    if (!res?.ok) menuMsg(res?.msg || 'สร้างห้องไม่สำเร็จ');
-  });
+  request($('#btnCreate'), '⏳ กำลังสร้าง…', 'createRoom',
+    { name: myName(), skin: save.skin, maxPlayers: $('#maxSelect').value }, 'สร้างห้องไม่สำเร็จ');
 });
 
 function join() {
   unlockAudio();
   sfx.click();
-  const code = $('#codeInput').value.trim().toUpperCase();
-  if (code.length !== 4) { menuMsg('ใส่รหัสห้อง 4 ตัวก่อนนะ'); return; }
+  const code = normalizeCode($('#codeInput').value);
+  $('#codeInput').value = code;
+  if (code.length !== 4) { menuMsg('ใส่รหัสห้องให้ครบ 4 ตัวก่อนนะ'); return; }
+  $('#codeInput').blur();
   save.name = $('#nameInput').value.trim();
   persist();
-  socket.emit('joinRoom', { code, name: myName(), skin: save.skin }, (res) => {
-    if (!res?.ok) menuMsg(res?.msg || 'เข้าห้องไม่สำเร็จ');
-  });
+  request($('#btnJoin'), '⏳ กำลังเข้า…', 'joinRoom', { code, name: myName(), skin: save.skin }, 'เข้าห้องไม่สำเร็จ');
 }
 $('#btnJoin').addEventListener('click', join);
 $('#codeInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
@@ -551,9 +585,16 @@ if (IS_APP) {
   });
 }
 
-socket.on('connect', () => menuMsg(''));
-socket.on('connect_error', () => menuMsg('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กำลังลองใหม่…'));
+function netStatus(ok) {
+  const host = new URL(serverUrl()).host;
+  $('#netStatus').textContent = ok ? `🟢 ออนไลน์ • ${host}` : `🟡 กำลังเชื่อมต่อ… • ${host}`;
+}
+netStatus(false);
+socket.on('connect', () => { netStatus(true); $('#menuMsg').textContent = ''; });
+socket.on('connect_error', () => netStatus(false));
+socket.io.on('reconnect_attempt', () => netStatus(false));
 socket.on('disconnect', () => {
+  netStatus(false);
   if (room) {
     toast('หลุดการเชื่อมต่อ 😢');
     room = null;

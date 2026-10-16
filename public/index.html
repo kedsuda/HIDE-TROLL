@@ -38,7 +38,7 @@
         <button id="btnCreate" class="btn primary">✨ สร้างห้อง</button>
       </div>
       <div class="row">
-        <input id="codeInput" class="code-input" maxlength="4" placeholder="รหัสห้อง" autocomplete="off">
+        <input id="codeInput" class="code-input" maxlength="8" placeholder="รหัสห้อง" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">
         <button id="btnJoin" class="btn">🚪 เข้าร่วม</button>
       </div>
       <div class="row">
@@ -47,6 +47,7 @@
       </div>
       <button id="btnGetApp" class="btn get-app" data-open="getapp">📲 ดาวน์โหลดลงโทรศัพท์</button>
       <p id="menuMsg" class="msg"></p>
+      <p id="netStatus" class="small muted net-status"></p>
       <label id="serverBox" class="field hidden">🌐 เซิร์ฟเวอร์เกม
         <input id="serverInput" placeholder="https://..." autocomplete="off" inputmode="url">
       </label>

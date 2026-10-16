@@ -371,7 +371,7 @@ io.on('connection', (socket) => {
   socket.on('joinRoom', (d, cb) => {
     cb = ack(cb);
     const room = rooms.get(clean(d?.code, 4).toUpperCase());
-    if (!room) return cb({ ok: false, msg: 'ไม่พบห้องนี้ ลองเช็กรหัสอีกครั้ง' });
+    if (!room) return cb({ ok: false, msg: 'ไม่พบห้องนี้ — เช็กรหัส และต้องเล่นเว็บ/แอปเดียวกับคนสร้างห้อง' });
     if (room.players.size >= room.maxPlayers) return cb({ ok: false, msg: 'ห้องเต็มแล้ว' });
     leave(socket);
     room.add(socket, clean(d?.name, 14) || 'ผู้เล่น', cleanSkin(d?.skin));
