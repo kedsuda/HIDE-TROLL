@@ -9,7 +9,7 @@ function ac() {
 }
 
 // ---- ไฟล์เสียงจริง (โหลดครั้งเดียวหลังผู้เล่นกดปุ่มแรก) ----
-const SAMPLE_FILES = { shotgun: 'sounds/shotgun.mp3' };
+const SAMPLE_FILES = { shotgun: 'sounds/shotgun.mp3', footsteps: 'sounds/footsteps.mp3' };
 const samples = {};
 const playing = [];
 
@@ -47,6 +47,40 @@ function playSample(name, vol) {
     old.s.stop(c.currentTime + 0.15);
   }
   return true;
+}
+
+// ---- เสียงเดิน: วนเสียงเฉพาะตอนตัวละครเดิน (หนึ่งเสียงต่อผู้เล่น) ----
+const steps = new Map();
+
+export function footsteps(id, walking, vol = 0.4, rate = 1) {
+  const buf = samples.footsteps;
+  let st = steps.get(id);
+  if (!walking || vol <= 0.01 || !(buf instanceof AudioBuffer) || !ctx) {
+    if (st && !st.stopping) {
+      st.stopping = true;
+      st.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+      st.s.stop(ctx.currentTime + 0.3);
+      steps.delete(id);
+    }
+    return;
+  }
+  if (!st) {
+    const s = ctx.createBufferSource();
+    const g = ctx.createGain();
+    s.buffer = buf;
+    s.loop = true;
+    g.gain.value = 0;
+    s.connect(g).connect(ctx.destination);
+    s.start(0, Math.random() * buf.duration);
+    st = { s, g };
+    steps.set(id, st);
+  }
+  st.g.gain.setTargetAtTime(vol, ctx.currentTime, 0.05);
+  st.s.playbackRate.setTargetAtTime(rate, ctx.currentTime, 0.1);
+}
+
+export function stopAllFootsteps() {
+  for (const id of [...steps.keys()]) footsteps(id, false);
 }
 
 export function unlockAudio() {

@@ -4,7 +4,7 @@ import { generateMap } from './maps.js';
 import {
   buildCharacter, animateCharacter, setOpacity, makeLabel, makeEmoji, uniqueMaterials,
 } from './character.js';
-import { sfx } from './audio.js';
+import { sfx, footsteps, stopAllFootsteps } from './audio.js';
 
 const GRAVITY = 24;
 const JUMP_V = 8;
@@ -145,6 +145,7 @@ export class Game {
   }
 
   stop() {
+    stopAllFootsteps();
     this.active = false;
     this.remotes.clear();
     this.decoys.clear();
@@ -342,6 +343,7 @@ export class Game {
     if (!r) return;
     this.scene?.remove(r.root);
     this.remotes.delete(id);
+    footsteps(id, false);
   }
 
   applySnapshot(snap) {
@@ -557,6 +559,7 @@ export class Game {
       me.op = op;
     }
     me.root.visible = !this.firstPerson;
+    footsteps('me', me.moving && me.onGround, 0.32, now < me.speedUntil ? 1.45 : 1);
   }
 
   remoteColliders() {
@@ -773,6 +776,9 @@ export class Game {
         r.op = op;
       }
       if (r.label) r.label.visible = r.team === 'hunter' || this.me.team === r.team;
+      // เสียงเดินของคนอื่น: ยิ่งใกล้ยิ่งดัง (ได้ยินแม้ล่องหน = เบาะแสให้ฝ่ายล่า)
+      const d = r.root.position.distanceTo(this.me.pos);
+      footsteps(r.id, !!r.moving && !r.air, Math.max(0, 1 - d / 22) * 0.4);
     }
   }
 
