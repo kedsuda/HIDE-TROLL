@@ -168,14 +168,16 @@ class Room {
   }
 
   start() {
-    const ids = shuffle([...this.players.keys()]);
+    const ids = [...this.players.keys()];
     const n = ids.length;
     // สุ่มผู้ล่า: 2-4 คน = 1, 5-7 คน = 2, 8-10 คน = 3 (เล่นคนเดียว = โหมดฝึกซ้อม)
     const hunters = n <= 1 ? 0 : n <= 4 ? 1 : n <= 7 ? 2 : 3;
-    ids.forEach((id, i) => {
+    // สุ่มเลือกผู้เล่นเป็นฝ่ายล่าโดยตรง เพื่อไม่ให้บทบาทขึ้นกับลำดับในห้อง
+    const hunterIds = new Set(shuffle(ids).slice(0, hunters));
+    ids.forEach((id) => {
       const p = this.players.get(id);
       Object.assign(p, {
-        team: i < hunters ? 'hunter' : 'hider', alive: true, prop: null, state: null,
+        team: hunterIds.has(id) ? 'hunter' : 'hider', alive: true, prop: null, state: null,
         cds: {}, invisUntil: 0, hp: 100, stunUntil: 0, earned: 0, catches: 0, taunts: 0,
       });
       p.starsCollected = 0; p.chestOpened = false; p.objectiveComplete = false;
