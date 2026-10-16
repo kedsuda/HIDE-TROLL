@@ -8,8 +8,52 @@ function ac() {
   return ctx;
 }
 
+// ---- ไฟล์เสียงจริง (โหลดครั้งเดียวหลังผู้เล่นกดปุ่มแรก) ----
+const SAMPLE_FILES = { shotgun: 'sounds/shotgun.mp3' };
+const samples = {};
+const playing = [];
+
+async function loadSamples() {
+  const c = ac();
+  await Promise.all(Object.entries(SAMPLE_FILES).map(async ([name, url]) => {
+    if (samples[name]) return;
+    samples[name] = 'loading';
+    try {
+      const data = await (await fetch(url)).arrayBuffer();
+      samples[name] = await c.decodeAudioData(data);
+    } catch {
+      delete samples[name];
+    }
+  }));
+}
+
+// เล่นไฟล์เสียง (คืนค่า false ถ้ายังโหลดไม่เสร็จ จะได้ใช้เสียงสังเคราะห์แทน)
+function playSample(name, vol) {
+  const buf = samples[name];
+  if (!(buf instanceof AudioBuffer)) return false;
+  const c = ac();
+  const s = c.createBufferSource();
+  const g = c.createGain();
+  s.buffer = buf;
+  g.gain.value = vol;
+  s.connect(g).connect(c.destination);
+  s.start();
+  // ยิงรัวๆ: เสียงซ้อนกันได้ไม่เกิน 4 เสียง ตัดเสียงเก่าสุดแบบค่อยๆ เบาลง
+  playing.push({ s, g });
+  s.onended = () => { const i = playing.findIndex((p) => p.s === s); if (i >= 0) playing.splice(i, 1); };
+  if (playing.length > 4) {
+    const old = playing.shift();
+    old.g.gain.setTargetAtTime(0, c.currentTime, 0.03);
+    old.s.stop(c.currentTime + 0.15);
+  }
+  return true;
+}
+
 export function unlockAudio() {
-  try { ac(); } catch { /* ไม่มีเสียงก็เล่นได้ */ }
+  try {
+    ac();
+    loadSamples();
+  } catch { /* ไม่มีเสียงก็เล่นได้ */ }
 }
 
 function tone(freq, dur, type = 'sine', vol = 0.2, slide = 0, delay = 0) {
@@ -57,7 +101,9 @@ const TAUNTS = [
 const safe = (fn) => (...a) => { try { fn(...a); } catch { /* ignore */ } };
 
 export const sfx = {
-  shoot: safe((v = 1) => { tone(900, 0.12, 'square', 0.07 * v, -650); noise(0.08, 0.08 * v); }),
+  shoot: safe((v = 1) => {
+    if (!playSample('shotgun', 0.6 * v)) { tone(900, 0.12, 'square', 0.07 * v, -650); noise(0.08, 0.08 * v); }
+  }),
   poof: safe((v = 1) => { noise(0.25, 0.12 * v); tone(300, 0.2, 'sine', 0.1 * v, 500); }),
   caught: safe(() => [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.15, 'triangle', 0.15, 0, i * 0.08))),
   miss: safe(() => tone(220, 0.25, 'sawtooth', 0.08, -120)),
