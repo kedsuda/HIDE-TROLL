@@ -3,7 +3,7 @@ import { Input } from './input.js';
 import { COLORS, HATS } from './character.js';
 import { MAPS } from './maps.js';
 import { sfx, unlockAudio } from './audio.js';
-import { IS_APP, DEFAULT_SERVER, serverUrl, setServerUrl } from './config.js';
+import { IS_APP, serverUrl, setServerUrl } from './config.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -21,19 +21,23 @@ function persist() {
   try { localStorage.setItem('ht_save', JSON.stringify(save)); } catch { /* ignore */ }
 }
 
+// slot = ตำแหน่งบนมือถือ (main = ปุ่มใหญ่, s0-s3 = วงในรอบปุ่มใหญ่, u1-u3 = ปุ่มเล็กวงนอก)
+// tone = สีปุ่ม, touch = แสดงเฉพาะมือถือ
 const SKILL_UI = {
   hider: [
-    { act: 'action', icon: '🪄', lbl: 'แปลงร่าง', key: 'E', main: true },
-    { act: 'invis', icon: '👻', lbl: 'ล่องหน', key: 'Q' },
-    { act: 'decoy', icon: '🎭', lbl: 'ตัวปลอม', key: 'F' },
-    { act: 'speed', icon: '⚡', lbl: 'วิ่งเร็ว', key: 'Shift' },
-    { act: 'taunt', icon: '😜', lbl: 'ยั่วยุ', key: 'T' },
-    { act: 'lock', icon: '🔒', lbl: 'ล็อกหมุน', key: 'R' },
-    { act: 'revert', icon: '↩️', lbl: 'กลับร่าง', key: 'Z' },
+    { act: 'action', icon: '🪄', lbl: 'แปลงร่าง', key: 'E', slot: 'main', tone: 'magic' },
+    { act: 'jump', icon: '⤒', lbl: 'กระโดด', key: 'Space', slot: 's0', tone: 'glass', touch: true },
+    { act: 'invis', icon: '👻', lbl: 'ล่องหน', key: 'Q', slot: 's1', tone: 'violet' },
+    { act: 'decoy', icon: '🎭', lbl: 'ตัวปลอม', key: 'F', slot: 's2', tone: 'amber' },
+    { act: 'speed', icon: '⚡', lbl: 'วิ่งเร็ว', key: 'Shift', slot: 's3', tone: 'cyan' },
+    { act: 'taunt', icon: '😜', lbl: 'ยั่วยุ', key: 'T', slot: 'u1', tone: 'pink' },
+    { act: 'lock', icon: '🔒', lbl: 'ล็อกหมุน', key: 'R', slot: 'u2', tone: 'slate' },
+    { act: 'revert', icon: '↩️', lbl: 'กลับร่าง', key: 'Z', slot: 'u3', tone: 'mint' },
   ],
   hunter: [
-    { act: 'action', icon: '🎯', lbl: 'ยิง', key: 'คลิก', main: true },
-    { act: 'speed', icon: '⚡', lbl: 'วิ่งเร็ว', key: 'Shift' },
+    { act: 'action', icon: '🎯', lbl: 'ยิง', key: 'คลิก', slot: 'main', tone: 'fire' },
+    { act: 'jump', icon: '⤒', lbl: 'กระโดด', key: 'Space', slot: 's0', tone: 'glass', touch: true },
+    { act: 'speed', icon: '⚡', lbl: 'วิ่งเร็ว', key: 'Shift', slot: 's1', tone: 'cyan' },
   ],
 };
 
@@ -108,11 +112,9 @@ function openModal(id) {
   if (document.pointerLockElement) document.exitPointerLock();
   input.enabled = false;
   if (id === 'shop') renderShop();
-  if (id === 'getapp') setupGetApp();
 }
 function closeModal(el) {
   el.classList.add('hidden');
-  $('#iosArrow').classList.add('hidden');
   if (inGame && $('#pause').classList.contains('hidden')) input.enabled = true;
 }
 for (const b of $$('[data-open]')) b.addEventListener('click', () => { sfx.click(); openModal(b.dataset.open); });
@@ -121,127 +123,9 @@ for (const m of $$('.modal')) {
   m.addEventListener('click', (e) => { if (e.target === m && m.id !== 'end') closeModal(m); });
 }
 
-// ---------- ดาวน์โหลดลงโทรศัพท์ ----------
-let installPrompt = null;
+// ---------- ทำงานแบบออฟไลน์บางส่วน (service worker) ----------
 if (!IS_APP && 'serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
-}
-const UA = navigator.userAgent;
-const OS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-  ? 'ios' : /Android/i.test(UA) ? 'android' : 'desktop';
-const IN_APP = /Line\/|FBAN|FBAV|FB_IAB|Instagram|Messenger|TikTok|; wv\)/i.test(UA);
-const isStandalone = () => matchMedia('(display-mode: standalone)').matches
-  || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  installPrompt = e;
-});
-window.addEventListener('appinstalled', () => {
-  installPrompt = null;
-  toast('ติดตั้งแล้ว! เปิดเกมได้จากไอคอนบนหน้าจอ 🎉');
-  setupGetApp();
-});
-$('#btnInstallPwa').addEventListener('click', async () => {
-  sfx.click();
-  if (installPrompt) {
-    installPrompt.prompt();
-    const choice = await installPrompt.userChoice.catch(() => null);
-    installPrompt = null;
-    if (choice?.outcome === 'accepted') return;
-  }
-  // เบราว์เซอร์ไม่มีปุ่มติดตั้งอัตโนมัติ → แสดงวิธีทำเอง
-  $('#pwaSteps').classList.remove('hidden');
-  toast('ทำตามขั้นตอนด้านล่างได้เลย 👇');
-});
-$('#btnIosGuide').addEventListener('click', () => {
-  sfx.click();
-  $('#iosSteps').classList.remove('hidden');
-  if (OS === 'ios' && !IN_APP) $('#iosArrow').classList.remove('hidden');
-});
-$('#btnCopyLink').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(location.href);
-    toast('คัดลอกลิงก์แล้ว — ไปวางในเบราว์เซอร์ได้เลย');
-  } catch {
-    toast(location.href);
-  }
-});
-if (IS_APP) $('#btnGetApp').classList.add('hidden');
-
-let qrLib = null;
-function loadQr() {
-  if (!qrLib) {
-    qrLib = new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'vendor/qrcode/qrcode.js';
-      s.onload = () => resolve(window.qrcode);
-      s.onerror = reject;
-      document.head.append(s);
-    });
-  }
-  return qrLib;
-}
-
-// ที่อยู่ที่มือถือเปิดได้: ถ้าเปิดจาก localhost ให้ใช้ IP ในวง Wi-Fi แทน
-async function phoneUrl() {
-  if (!/^(localhost|127.|[::1])/.test(location.hostname)) return location.origin;
-  try {
-    const info = await (await fetch('api/info')).json();
-    return info.lan[0] || location.origin;
-  } catch {
-    return location.origin;
-  }
-}
-
-// ลิงก์เปิดหน้านี้ในเบราว์เซอร์จริง (ออกจากเบราว์เซอร์ในแอป LINE/Facebook)
-function externalBrowserUrl() {
-  if (/Line\//i.test(UA)) {
-    const u = new URL(location.href);
-    u.searchParams.set('openExternalBrowser', '1');
-    return u.href;
-  }
-  if (OS === 'android') {
-    return `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=${location.protocol.slice(0, -1)};package=com.android.chrome;end`;
-  }
-  return null;
-}
-
-async function setupGetApp() {
-  const installed = isStandalone();
-  for (const el of $$('#getapp [data-os]')) {
-    el.classList.toggle('hidden', !el.dataset.os.split(' ').includes(OS) || (installed && el.id !== 'apkOption'));
-  }
-  $('#installedNote').classList.toggle('hidden', !installed);
-  const inApp = IN_APP && OS !== 'desktop';
-  $('#inAppOption').classList.toggle('hidden', !inApp);
-  if (inApp) {
-    const ext = externalBrowserUrl();
-    $('#btnOpenBrowser').classList.toggle('hidden', !ext);
-    $('#inAppIosHint').classList.toggle('hidden', !!ext);
-    if (ext) $('#btnOpenBrowser').href = ext;
-    $('#pwaOption').classList.add('hidden');
-    $('#iosOption').classList.add('hidden');
-  }
-  const url = await phoneUrl();
-  const note = $('#apkServerNote');
-  const secure = url.startsWith('https://');
-  note.classList.toggle('hidden', url === DEFAULT_SERVER);
-  note.textContent = secure
-    ? `หลังติดตั้ง: ถ้าแอปต่อเซิร์ฟเวอร์ไม่ได้ ให้ใส่ ${url} ในช่อง "🌐 เซิร์ฟเวอร์เกม" ที่หน้าเมนูของแอป`
-    : 'แอปเชื่อมต่อได้เฉพาะเซิร์ฟเวอร์ https (เช่นบน Render) — ถ้าทดสอบในวง Wi-Fi ให้เล่นผ่าน Chrome แทน';
-  if (OS !== 'desktop') return;
-  $('#qrBox').classList.remove('hidden');
-  $('#qrUrl').textContent = url;
-  try {
-    const qrcode = await loadQr();
-    const qr = qrcode(0, 'M');
-    qr.addData(url);
-    qr.make();
-    $('#qr').innerHTML = qr.createImgTag(5, 0);
-  } catch {
-    $('#qr').textContent = '';
-  }
 }
 
 // ---------- ร้านสกิน ----------
@@ -467,11 +351,19 @@ function renderSkills(team) {
   const box = $('#skills');
   box.innerHTML = '';
   for (const s of SKILL_UI[team] || []) {
+    if (s.touch && !input.touch) continue;
     const b = document.createElement('button');
-    b.className = `skill${s.main ? ' main' : ''}`;
+    b.className = `skill tone-${s.tone}${s.slot === 'main' ? ' main' : ''}${s.slot[0] === 'u' ? ' mini' : ''}`;
     b.dataset.act = s.act;
-    b.innerHTML = `<span>${s.icon}</span><span class="lbl">${s.lbl}</span><span class="key">${s.key}</span>`;
-    const fire = (e) => { e.preventDefault(); input.push(s.act); };
+    b.dataset.slot = s.slot;
+    b.innerHTML = `<span class="ic">${s.icon}</span><span class="lbl">${s.lbl}</span><span class="key">${s.key}</span><span class="cd"></span>`;
+    const fire = (e) => {
+      e.preventDefault();
+      input.push(s.act);
+      b.classList.add('pressed');
+      setTimeout(() => b.classList.remove('pressed'), 140);
+      if (navigator.vibrate && input.touch) navigator.vibrate(8);
+    };
     b.addEventListener('touchstart', fire, { passive: false });
     b.addEventListener('click', fire);
     box.append(b);
@@ -609,13 +501,12 @@ function uiLoop() {
   for (const b of $$('#skills .skill')) {
     const act = b.dataset.act;
     const cd = cooldowns[act];
-    let ov = b.querySelector('.cd');
     const left = cd ? cd.until - now : 0;
-    if (left > 0) {
-      if (!ov) { ov = document.createElement('span'); ov.className = 'cd'; b.append(ov); }
-      ov.textContent = Math.ceil(left / 1000);
-    } else if (ov) {
-      ov.remove();
+    const cooling = left > 0;
+    b.classList.toggle('cooling', cooling);
+    if (cooling) {
+      b.style.setProperty('--cd', (left / cd.total).toFixed(3));
+      b.querySelector('.cd').textContent = Math.ceil(left / 1000);
     }
     if (me) {
       const active = (act === 'invis' && now < me.invisUntil) || (act === 'speed' && now < me.speedUntil)

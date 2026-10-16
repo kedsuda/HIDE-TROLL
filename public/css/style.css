@@ -148,24 +148,6 @@ kbd {
 #hpFill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff5c5c, #ffb84d); transition: width 0.2s; }
 .hp span { position: absolute; inset: 0; text-align: center; font-size: 0.75rem; line-height: 16px; font-weight: 600; }
 
-.skills {
-  position: absolute; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-  display: flex; gap: 10px;
-}
-.skill {
-  position: relative; width: 64px; height: 64px; border-radius: 18px; border: 2px solid var(--line);
-  background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 1.6rem; line-height: 1; cursor: pointer; overflow: hidden; padding: 0;
-}
-.skill .lbl { font-size: 0.6rem; margin-top: 3px; color: var(--muted); }
-.skill .key {
-  position: absolute; top: 3px; right: 5px; font-size: 0.6rem; color: var(--accent); font-weight: 600;
-}
-.skill .cd {
-  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.65); display: flex;
-  align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 800;
-}
-.skill.active { border-color: var(--accent); box-shadow: 0 0 14px var(--accent); }
 .click-hint {
   position: absolute; left: 50%; top: 62%; transform: translateX(-50%);
   background: rgba(20, 10, 40, 0.8); padding: 8px 18px; border-radius: 999px; font-weight: 600;
@@ -181,30 +163,125 @@ kbd {
   background: var(--panel); font-size: 1.3rem; cursor: pointer;
 }
 
+/* ---------- ปุ่มสกิล (ทรงกลม ไล่สี) ---------- */
+.skill {
+  --c1: #6c5ce7; --c2: #4834d4; --glow: #a29bfe; --cd: 0;
+  position: relative; width: 64px; height: 64px; padding: 0; border-radius: 50%; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(160deg, var(--c1), var(--c2));
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 8px 18px rgba(0, 0, 0, 0.35), inset 0 -6px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.08s ease-out, box-shadow 0.08s, filter 0.2s;
+  -webkit-tap-highlight-color: transparent; touch-action: none;
+}
+.skill .ic { font-size: 1.55rem; filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.35)); }
+.skill .lbl {
+  font-size: 0.58rem; font-weight: 600; margin-top: 3px; color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); white-space: nowrap;
+}
+.skill .key {
+  position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 999px;
+  background: #1d1236; border: 2px solid rgba(255, 255, 255, 0.8); color: var(--accent);
+  font-size: 0.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+/* วงแหวนคูลดาวน์: ส่วนมืดกวาดลดลงตามเวลาที่เหลือ */
+.skill .cd {
+  position: absolute; inset: -3px; border-radius: 50%; display: none;
+  align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 800; color: #fff;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.8);
+  background: conic-gradient(rgba(12, 6, 30, 0.78) calc(var(--cd) * 360deg), rgba(12, 6, 30, 0.15) 0);
+}
+.skill.cooling .cd { display: flex; }
+.skill.cooling { filter: saturate(0.35); }
+.skill.cooling .ic, .skill.cooling .lbl { opacity: 0.35; }
+.skill:active, .skill.pressed { transform: translateY(3px) scale(0.92); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.3), inset 0 -3px 8px rgba(0, 0, 0, 0.25); }
+.skill.active { border-color: #fff; animation: skillGlow 0.9s ease-in-out infinite; }
+@keyframes skillGlow {
+  0%, 100% { box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 0 0 0 var(--glow); }
+  50% { box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 0 0 8px transparent, 0 0 22px 6px var(--glow); }
+}
+.skill.main { width: 84px; height: 84px; border-width: 4px; }
+.skill.main .ic { font-size: 2.2rem; }
+.skill.main .lbl { font-size: 0.7rem; }
+.skill.main::before {
+  content: ''; position: absolute; inset: -9px; border-radius: 50%; pointer-events: none;
+  border: 2px dashed rgba(255, 255, 255, 0.35); animation: spin 12s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.tone-magic { --c1: #c56cff; --c2: #ff4f9a; --glow: #ff8fd0; }
+.tone-fire { --c1: #ffa53d; --c2: #ff3d3d; --glow: #ff8a5c; }
+.tone-violet { --c1: #9d8cff; --c2: #5a45e0; --glow: #b9aaff; }
+.tone-amber { --c1: #ffd45c; --c2: #ff9318; --glow: #ffd166; }
+.tone-cyan { --c1: #5ce6ff; --c2: #1f7cff; --glow: #7fe8ff; }
+.tone-pink { --c1: #ff8cc6; --c2: #e0457b; --glow: #ff9ccf; }
+.tone-slate { --c1: #a9b6c4; --c2: #5b6878; --glow: #ffd166; }
+.tone-mint { --c1: #7af0c4; --c2: #12a978; --glow: #7af0c4; }
+.tone-glass {
+  --c1: rgba(255, 255, 255, 0.28); --c2: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.6); backdrop-filter: blur(6px);
+}
+.tone-glass .ic { font-size: 1.9rem; font-weight: 800; color: #fff; }
+
+/* คอมพิวเตอร์: แถวปุ่มด้านล่างกลางจอ */
+.skills {
+  position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  display: flex; gap: 14px; align-items: flex-end;
+}
+
 /* ---------- มือถือ ---------- */
-.touch .joy-zone { position: absolute; left: 0; bottom: 0; width: 42vw; height: 55vh; }
+/* ปุ่มเรียงเป็นวงโค้งรอบปุ่มหลักมุมขวาล่าง (พิกัดคิดจากมุมขวาล่าง) */
+body.is-touch .skills {
+  left: auto; transform: none; display: block; gap: 0;
+  right: max(14px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+  width: 270px; height: 290px; pointer-events: none; transform-origin: 100% 100%;
+}
+body.is-touch .skill { position: absolute; pointer-events: auto; width: 60px; height: 60px; }
+body.is-touch .skill .key { display: none; }
+body.is-touch .skill.main { width: 96px; height: 96px; right: 22px; bottom: 22px; }
+body.is-touch .skill.main .ic { font-size: 2.5rem; }
+body.is-touch .skill.mini { width: 48px; height: 48px; border-width: 2px; }
+body.is-touch .skill.mini .ic { font-size: 1.25rem; }
+body.is-touch .skill.mini .lbl { display: none; }
+body.is-touch .skill[data-slot="s0"] { width: 64px; height: 64px; right: 152px; bottom: 30px; }
+body.is-touch .skill[data-slot="s1"] { right: 131px; bottom: 111px; }
+body.is-touch .skill[data-slot="s2"] { right: 72px; bottom: 151px; }
+body.is-touch .skill[data-slot="s3"] { right: 4px; bottom: 150px; }
+body.is-touch .skill[data-slot="u1"] { right: 214px; bottom: 135px; }
+body.is-touch .skill[data-slot="u2"] { right: 168px; bottom: 191px; }
+body.is-touch .skill[data-slot="u3"] { right: 105px; bottom: 227px; }
+@media (max-height: 420px) { body.is-touch .skills { transform: scale(0.84); } }
+@media (max-height: 340px) { body.is-touch .skills { transform: scale(0.72); } }
+
+/* จอยสติ๊ก */
+.touch .joy-zone { position: absolute; left: 0; bottom: 0; width: 45vw; height: 65vh; }
 .joy-base {
-  position: fixed; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12); border: 2px solid rgba(255, 255, 255, 0.3);
-  left: 90px; top: calc(100vh - 110px); opacity: 0.6;
+  position: fixed; width: 130px; height: 130px; margin: -65px 0 0 -65px; border-radius: 50%;
+  left: max(96px, calc(env(safe-area-inset-left) + 86px)); top: calc(100vh - 104px);
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.04) 0 38%, rgba(255, 255, 255, 0.12) 39% 64%, rgba(255, 255, 255, 0.04) 65%),
+    rgba(20, 10, 40, 0.25);
+  border: 3px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3), inset 0 0 18px rgba(255, 255, 255, 0.08);
+  opacity: 0.55; transition: opacity 0.15s;
+}
+.joy-base::before {
+  content: '▲'; position: absolute; inset: 6px 0 auto; text-align: center; font-size: 0.7rem; color: rgba(255, 255, 255, 0.6);
+  text-shadow: 0 54px 0 transparent;
+}
+.joy-base::after {
+  content: '◀            ▶'; position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%);
+  text-align: center; font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); white-space: pre;
 }
 .joy-base.on { opacity: 1; }
 .joy-knob {
-  position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px;
-  border-radius: 50%; background: rgba(255, 255, 255, 0.55);
+  position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #d9cfff 45%, #8f7bff);
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), inset 0 -4px 8px rgba(80, 50, 180, 0.4);
 }
-.tbtn {
-  position: absolute; border-radius: 50%; border: 2px solid var(--line); background: var(--panel);
-  font-size: 1.6rem; width: 70px; height: 70px;
-}
-.tbtn.jump { right: 18px; bottom: 170px; }
-body.is-touch .skills {
-  left: auto; right: 12px; transform: none; flex-wrap: wrap; justify-content: flex-end;
-  width: 220px; flex-direction: row-reverse; bottom: max(12px, env(safe-area-inset-bottom));
-}
-body.is-touch .skill { width: 60px; height: 60px; }
-body.is-touch .skill.main { width: 74px; height: 74px; font-size: 2rem; border-color: var(--accent); }
-body.is-touch .skill .key { display: none; }
 body.is-touch .hp { bottom: auto; top: 86px; }
 
 /* ---------- แชต ---------- */
@@ -257,33 +334,6 @@ body.lobby-open .chat { right: auto; }
 .end-list li { display: flex; justify-content: space-between; padding: 6px 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.07); }
 .end-list li.me { outline: 2px solid var(--accent); }
 
-.get-app {
-  background: linear-gradient(135deg, #43e97b, #38b2f9); font-size: 1.05rem; padding: 0.7em;
-}
-.getapp-panel { width: min(480px, 100%) !important; }
-.qr-box { display: flex; gap: 14px; align-items: center; background: rgba(255, 255, 255, 0.06); padding: 12px; border-radius: 16px; }
-.qr { background: #fff; padding: 8px; border-radius: 12px; line-height: 0; flex: none; }
-.qr img { width: 150px; height: 150px; image-rendering: pixelated; }
-.qr-url { font-size: 0.8rem; word-break: break-all; color: var(--accent); user-select: text; }
-.dl-option { border: 2px solid var(--line); border-radius: 16px; padding: 10px 14px; }
-.dl-option p { margin: 6px 0 0; }
-.dl-title { font-weight: 600; margin-bottom: 4px; }
-.pp-help { margin-top: 8px; background: rgba(255, 209, 102, 0.1); border-radius: 12px; padding: 6px 10px; }
-.pp-help summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 0.9rem; }
-.pp-help ol { margin: 4px 0; padding-left: 1.3em; line-height: 1.6; }
-.dl-option.ok { border-color: var(--hider); color: var(--hider); font-weight: 600; }
-.dl-option.warn { border-color: var(--accent); background: rgba(255, 209, 102, 0.08); }
-.dl-option .btn + .btn, .dl-option .btn + p + .btn { margin-top: 6px; }
-.tag-rec { font-size: 0.7rem; background: var(--hider); color: #10332a; border-radius: 999px; padding: 1px 8px; vertical-align: middle; }
-.steps { margin: 8px 0 0; padding: 8px 10px 8px 2em; line-height: 1.7; background: rgba(255, 255, 255, 0.06); border-radius: 12px; }
-.ios-arrow {
-  position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 30; pointer-events: none;
-  display: flex; flex-direction: column; align-items: center; font-size: 2.6rem; animation: bob 0.9s ease-in-out infinite;
-}
-.ios-arrow span { font-size: 0.85rem; font-weight: 600; background: var(--panel); padding: 2px 10px; border-radius: 999px; order: -1; }
-@keyframes bob { 50% { transform: translate(-50%, 10px); } }
-.dl-btn { display: block; text-align: center; text-decoration: none; color: inherit; }
-
 .toast {
   position: fixed; left: 50%; top: 22%; transform: translate(-50%, -10px); z-index: 20;
   background: rgba(20, 10, 40, 0.9); border: 2px solid var(--accent); padding: 8px 18px;
@@ -293,7 +343,6 @@ body.lobby-open .chat { right: auto; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* มือถือแนวนอน (จอเตี้ย) */
-body.is-touch .tbtn.jump { right: auto; left: auto; right: 250px; bottom: 18px; width: 64px; height: 64px; }
 @media (max-height: 520px) {
   .menu-panel { gap: 8px; padding: 14px 18px; }
   .screen { padding: 8px 16px; }
@@ -308,10 +357,6 @@ body.is-touch .tbtn.jump { right: auto; left: auto; right: 250px; bottom: 18px; 
   .lobby-panel { gap: 8px; padding: 14px 18px; }
   .room-code { font-size: 1.8rem; }
   .player-list li { padding: 5px 10px; }
-  body.is-touch .skills { width: 196px; gap: 8px; }
-  body.is-touch .skill { width: 54px; height: 54px; font-size: 1.35rem; }
-  body.is-touch .skill.main { width: 64px; height: 64px; font-size: 1.7rem; }
-  body.is-touch .tbtn.jump { right: 222px; width: 58px; height: 58px; }
   body.is-touch .chat.in-game { top: 62px; width: 34vw; }
   body.is-touch .chat.in-game input { padding: 0.25em 0.6em; font-size: 0.75rem; opacity: 0.45; }
   body.is-touch .chat.in-game .chat-log { max-height: 64px; font-size: 0.7rem; }

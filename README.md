@@ -71,16 +71,9 @@ public/js/input.js    คีย์บอร์ด/เมาส์/จอยส�
 public/js/audio.js    เสียงเอฟเฟกต์ (สังเคราะห์ ไม่ต้องใช้ไฟล์)
 ```
 
-## ดาวน์โหลดลงโทรศัพท์
-
-ที่หน้าเมนูมีปุ่ม **📲 ดาวน์โหลดลงโทรศัพท์**
-- บนคอม: แสดง QR ให้มือถือสแกนเปิดเว็บ (ถ้าเปิดจาก localhost จะใช้ IP ในวง Wi-Fi ให้อัตโนมัติ)
-- Android: ปุ่มดาวน์โหลด APK + ปุ่มติดตั้งเป็นแอปแบบเร็ว (PWA — ใช้ได้เมื่อเว็บเป็น https เช่นบน Render)
-- iPhone: Safari → แชร์ → เพิ่มไปยังหน้าจอโฮม
-
 ## แอป Android (APK)
 
-ดาวน์โหลดได้จากเว็บเกม: `https://<เว็บของคุณ>/download/hide-and-troll.apk`
+ดาวน์โหลดได้จาก GitHub Releases: https://github.com/kedsuda/HIDE-TROLL/releases/latest
 แอปจะต่อเซิร์ฟเวอร์ตาม `DEFAULT_SERVER` ใน `public/js/config.js`
 (เปลี่ยนเองได้ในแอป ช่อง "🌐 เซิร์ฟเวอร์เกม" ที่หน้าเมนู)
 

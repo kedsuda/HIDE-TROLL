@@ -1,7 +1,6 @@
 import express from 'express';
 import http from 'node:http';
 import path from 'node:path';
-import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 
@@ -28,20 +27,8 @@ const app = express();
 app.use(express.static(path.join(ROOT, 'public')));
 app.use('/vendor/three', express.static(path.join(ROOT, 'node_modules/three/build')));
 app.use('/vendor/socket.io', express.static(path.join(ROOT, 'node_modules/socket.io/client-dist')));
-app.use('/vendor/qrcode', express.static(path.join(ROOT, 'node_modules/qrcode-generator')));
 app.get('/health', (_req, res) => res.send('ok'));
 
-// ที่อยู่ในวง Wi-Fi เดียวกัน (ใช้ทำ QR ตอนเปิดเว็บจาก localhost)
-app.get('/api/info', (_req, res) => {
-  const lan = [];
-  for (const [name, addrs] of Object.entries(os.networkInterfaces())) {
-    if (/vmware|virtual|vethernet|loopback|docker|wsl/i.test(name)) continue;
-    for (const a of addrs || []) {
-      if (a.family === 'IPv4' && !a.internal) lan.push(`http://${a.address}:${PORT}`);
-    }
-  }
-  res.json({ lan });
-});
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
