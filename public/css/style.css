@@ -257,7 +257,7 @@ body.is-touch .skill.mini .ic { font-size: 1.25rem; }
 body.is-touch .skill.mini .lbl { display: none; }
 body.is-touch .skill[data-slot="s0"] { width: 64px; height: 64px; right: 152px; bottom: 30px; }
 body.is-touch .skill[data-slot="s1"] { right: 131px; bottom: 111px; }
-body.is-touch .skill[data-slot="s2"] { right: 72px; bottom: 151px; }
+body.is-touch .skill[data-slot="s2"] { right: 68px; bottom: 154px; }
 body.is-touch .skill[data-slot="s3"] { right: 4px; bottom: 150px; }
 body.is-touch .skill[data-slot="u1"] { right: 214px; bottom: 135px; }
 body.is-touch .skill[data-slot="u2"] { right: 168px; bottom: 191px; }
@@ -396,4 +396,32 @@ body.lobby-open .chat { right: auto; }
   .lobby-panel { width: min(520px, 100%); padding: 16px; }
   .lobby-body, .help-cols { grid-template-columns: 1fr; }
   .room-code { font-size: 2rem; }
+}
+
+/* ---------- มือถือแนวตั้ง: ปรับ HUD ในเกมให้พอดีจอแคบ ---------- */
+@media (max-aspect-ratio: 1/1) {
+  .top-bar { gap: 6px; padding: 0 58px 0 8px; justify-content: flex-start; }
+  .top-bar .badge { font-size: 0.72rem; padding: 4px 8px; margin-top: 4px; white-space: nowrap; border-width: 1.5px; }
+  .timer-box { min-width: 70px; padding: 2px 10px 4px; border-radius: 14px; }
+  #phaseLabel { font-size: 0.6rem; white-space: nowrap; }
+  #timer { font-size: 1.25rem; }
+  .corner-btn { width: 40px; height: 40px; font-size: 1.1rem; right: 8px; }
+  .hint { top: calc(50% + 28px); font-size: 0.78rem; padding: 3px 12px; white-space: normal; text-align: center; width: max-content; max-width: 86vw; }
+  .feed { top: 64px; right: 8px; max-width: 70vw; }
+  .feed div { font-size: 0.75rem; }
+  body.is-touch .hp { top: 62px; width: 150px; height: 16px; }
+  body.is-touch .hp span { line-height: 12px; font-size: 0.65rem; }
+  .toast { top: 16%; font-size: 0.85rem; padding: 6px 14px; }
+
+  body.is-touch .chat.in-game { top: 58px; left: 8px; width: 58vw; }
+  body.is-touch .chat.in-game .chat-log { max-height: 48px; font-size: 0.66rem; }
+  body.is-touch .chat.in-game input { font-size: 0.72rem; padding: 0.2em 0.6em; opacity: 0.4; }
+
+  body.is-touch .skills { right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); transform: scale(0.8); }
+  .joy-base { width: 112px; height: 112px; margin: -56px 0 0 -56px; left: 72px; top: calc(100vh - 86px); }
+  .joy-knob { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+  .touch .joy-zone { width: 50vw; height: 45vh; }
+}
+@media (max-aspect-ratio: 1/1) and (max-width: 360px) {
+  body.is-touch .skills { transform: scale(0.72); }
 }

@@ -71,6 +71,12 @@ export class Game {
     const h = window.innerHeight;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
+    // จอแนวตั้ง: ขยายมุมกล้องให้เห็นด้านข้างพอๆ กับจอแนวนอน (มุมกว้างแนวนอนอย่างน้อย ~65°)
+    const aspect = w / h;
+    this.portrait = aspect < 1;
+    this.camera.fov = this.portrait
+      ? Math.min(100, (2 * Math.atan(Math.tan((32.5 * Math.PI) / 180) / aspect) * 180) / Math.PI)
+      : 70;
     this.camera.updateProjectionMatrix();
     const pc = this.previewCam;
     pc.aspect = w / h;
@@ -812,8 +818,8 @@ export class Game {
       cam.position.copy(target);
     } else {
       const right = new THREE.Vector3(Math.cos(me.yaw), 0, -Math.sin(me.yaw));
-      const pivot = target.clone().addScaledVector(right, 0.55);
-      let dist = 4.2 + (me.prop ? Math.min(2, h * 0.6) : 0);
+      const pivot = target.clone().addScaledVector(right, this.portrait ? 0.2 : 0.55);
+      let dist = (this.portrait ? 5 : 4.2) + (me.prop ? Math.min(2, h * 0.6) : 0);
       this.raycaster.set(pivot, f.clone().negate());
       this.raycaster.far = dist;
       const hit = this.raycaster.intersectObject(this.world.wallGroup, true)[0];
