@@ -136,7 +136,7 @@ kbd {
 }
 #crosshair.hunter { border-color: var(--hunter); }
 .hint {
-  position: absolute; left: 50%; top: calc(50% + 34px); transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 104px; transform: translateX(-50%);
   background: rgba(20, 10, 40, 0.6); padding: 4px 14px; border-radius: 999px; font-size: 0.95rem;
   white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
 }
@@ -262,8 +262,10 @@ body.is-touch .skill[data-slot="s3"] { right: 4px; bottom: 150px; }
 body.is-touch .skill[data-slot="u1"] { right: 214px; bottom: 135px; }
 body.is-touch .skill[data-slot="u2"] { right: 168px; bottom: 191px; }
 body.is-touch .skill[data-slot="u3"] { right: 105px; bottom: 227px; }
-@media (max-height: 420px) { body.is-touch .skills { transform: scale(0.84); } }
-@media (max-height: 340px) { body.is-touch .skills { transform: scale(0.72); } }
+/* คำแนะนำบนมือถือแนวนอน: กลางล่าง ระหว่างจอยกับปุ่ม (ไม่บังตัวละคร) */
+body.is-touch .hint { bottom: max(14px, env(safe-area-inset-bottom)); max-width: 40vw; white-space: normal; text-align: center; font-size: 0.8rem; }
+@media (max-height: 520px) { body.is-touch .skills { transform: scale(0.8); } }
+@media (max-height: 400px) { body.is-touch .skills { transform: scale(0.7); } }
 
 /* จอยสติ๊ก */
 .touch .joy-zone { position: absolute; left: 0; bottom: 0; width: 45vw; height: 65vh; }
@@ -370,7 +372,7 @@ body.lobby-open .chat { right: auto; }
   .lobby-panel { gap: 8px; padding: 14px 18px; }
   .room-code { font-size: 1.8rem; }
   .player-list li { padding: 5px 10px; }
-  body.is-touch .chat.in-game { top: 62px; width: 34vw; }
+  body.is-touch .chat.in-game { top: 62px; width: 28vw; }
   body.is-touch .chat.in-game input { padding: 0.25em 0.6em; font-size: 0.75rem; opacity: 0.45; }
   body.is-touch .chat.in-game .chat-log { max-height: 64px; font-size: 0.7rem; }
   .top-bar { gap: 8px; }
@@ -406,7 +408,7 @@ body.lobby-open .chat { right: auto; }
   #phaseLabel { font-size: 0.6rem; white-space: nowrap; }
   #timer { font-size: 1.25rem; }
   .corner-btn { width: 40px; height: 40px; font-size: 1.1rem; right: 8px; }
-  .hint { top: calc(50% + 28px); font-size: 0.78rem; padding: 3px 12px; white-space: normal; text-align: center; width: max-content; max-width: 86vw; }
+  .hint, body.is-touch .hint { top: 104px; bottom: auto; font-size: 0.78rem; padding: 3px 12px; white-space: normal; text-align: center; width: max-content; max-width: 86vw; }
   .feed { top: 64px; right: 8px; max-width: 70vw; }
   .feed div { font-size: 0.75rem; }
   body.is-touch .hp { top: 62px; width: 150px; height: 16px; }
