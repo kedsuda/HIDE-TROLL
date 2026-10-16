@@ -232,31 +232,30 @@
         <button id="btnCopyLink" class="btn big">📋 คัดลอกลิงก์ไปเปิดเอง</button>
       </div>
 
+      <div id="apkOption" class="dl-option" data-os="android desktop">
+        <div class="dl-title">🤖 แอป Android <span class="tag-rec">แนะนำ</span></div>
+        <a id="apkLink" class="btn primary big dl-btn" href="download/hide-and-troll.apk" download="hide-and-troll.apk">⬇️ ดาวน์โหลดแอป (APK 3 MB)</a>
+        <ol class="small steps">
+          <li>เปิดไฟล์ที่โหลดมา → ถ้าถาม ให้กด <b>"อนุญาตให้ติดตั้งจากแหล่งนี้"</b></li>
+          <li>ถ้าขึ้น Google Play Protect <b>"ขอแนะนำให้สแกนแอป"</b> → กด <b>"สแกนแอป"</b> แล้วรอประมาณ 15 วินาที</li>
+          <li>ขึ้น <b>"แอปนี้ดูปลอดภัย"</b> → กด <b>"ติดตั้ง"</b> ✅</li>
+        </ol>
+        <details class="pp-help">
+          <summary>ขึ้นว่า "แอปถูกบล็อก" แทน?</summary>
+          <p class="small">กด <b>"รายละเอียดเพิ่มเติม"</b> แล้วดูว่ามีปุ่ม <b>"สแกนแอป"</b> หรือ <b>"ติดตั้งต่อไป"</b> ไหม — ถ้าไม่มี ให้ลบไฟล์เก่าแล้วดาวน์โหลดใหม่จากปุ่มด้านบน (ไม่แนะนำให้ปิด Play Protect)</p>
+        </details>
+        <p id="apkServerNote" class="small hidden"></p>
+      </div>
+
       <div id="pwaOption" class="dl-option" data-os="android desktop">
-        <div class="dl-title">⚡ ติดตั้งเป็นแอป <span class="tag-rec">แนะนำ</span></div>
-        <p class="small muted">ไม่ต้องโหลดไฟล์ • ไม่มีคำเตือน Play Protect • อัปเดตอัตโนมัติ</p>
-        <button id="btnInstallPwa" class="btn primary big">➕ เพิ่มเกมลงหน้าจอ</button>
+        <div class="dl-title">⚡ หรือติดตั้งผ่าน Chrome (ไม่ต้องโหลดไฟล์)</div>
+        <p class="small muted">ใช้ได้เฉพาะมือถือที่ Chrome มีเมนู "ติดตั้งแอป" — มือถือรุ่น Android Go บางรุ่นไม่มีเมนูนี้ ให้ใช้แอปด้านบนแทน</p>
+        <button id="btnInstallPwa" class="btn big">➕ เพิ่มเกมลงหน้าจอ</button>
         <ol id="pwaSteps" class="small steps hidden">
           <li>กดปุ่ม <b>⋮</b> มุมขวาบนของ Chrome</li>
           <li>เลือก <b>"ติดตั้งแอป"</b> หรือ <b>"เพิ่มลงในหน้าจอหลัก"</b></li>
-          <li>กด <b>"ติดตั้ง"</b> / <b>"เพิ่ม"</b> — ไอคอนเกมจะอยู่บนหน้าจอ</li>
+          <li>ถ้าไม่มีเมนูนี้ แปลว่ามือถือไม่รองรับ — ใช้ <b>"ดาวน์โหลดแอป"</b> ด้านบน</li>
         </ol>
-      </div>
-
-      <div id="apkOption" class="dl-option" data-os="android desktop">
-        <div class="dl-title">🤖 แอป Android (ไฟล์ APK)</div>
-        <a id="apkLink" class="btn big dl-btn" href="download/hide-and-troll.apk" download="hide-and-troll.apk">⬇️ ดาวน์โหลด APK (3 MB)</a>
-        <p class="small muted">เปิดไฟล์ที่โหลดมา → ถ้ามือถือถาม ให้กด "อนุญาตให้ติดตั้งจากแหล่งนี้" → ติดตั้ง</p>
-        <details class="pp-help">
-          <summary>⚠️ ขึ้นว่า "แอปถูกบล็อก" / Play Protect?</summary>
-          <p class="small">เพราะแอปไม่ได้มาจาก Play Store และ Google ยังไม่รู้จักผู้พัฒนา (ไม่ได้แปลว่ามีไวรัส)</p>
-          <ol class="small">
-            <li>กด <b>"รายละเอียดเพิ่มเติม"</b> ในหน้าต่างเตือน</li>
-            <li>ถ้ามีปุ่ม <b>"ติดตั้งต่อไป"</b> ให้กดได้เลย</li>
-          </ol>
-          <p class="small">ถ้าไม่มีปุ่มนี้ ใช้ <b>"⚡ ติดตั้งเป็นแอป"</b> ด้านบนแทน — ไม่แนะนำให้ปิด Play Protect</p>
-        </details>
-        <p id="apkServerNote" class="small hidden"></p>
       </div>
 
       <div id="iosOption" class="dl-option" data-os="ios desktop">
