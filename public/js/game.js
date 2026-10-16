@@ -77,9 +77,20 @@ export class Game {
     const wide = w / h > 1.15;
     // จอคอม: ตัวละครอยู่กลางจอ / มือถือแนวตั้ง: มองจากสูงขึ้นเพราะเมนูอยู่ด้านล่าง
     // เปิดร้านสกินบนจอคอม: เลื่อนตัวละครไปซ้ายให้เห็นข้างหน้าต่างร้าน
-    const sx = wide && this.previewShift ? 2.1 : 0;
-    pc.position.set(sx, wide ? 1.6 : 2.6, wide ? 5.6 : 7);
-    pc.lookAt(sx, wide ? 0.85 : 1.6, 0);
+    if (wide) {
+      // เปิดร้านสกิน หรือมือถือแนวนอน (จอเตี้ย): เลื่อนตัวละครไปซ้าย ไม่ให้เมนูบัง
+      const sx = this.previewShift || h <= 520 ? 2.1 : 0;
+      pc.clearViewOffset();
+      pc.position.set(sx, 1.6, 5.6);
+      pc.lookAt(sx, 0.85, 0);
+    } else {
+      // จอแนวตั้ง: วางตัวละครกลางพื้นที่ว่างเหนือเมนู (free = สัดส่วนความสูงที่ว่างด้านบน)
+      const f = Math.min(0.9, Math.max(0.22, this.previewFree ?? 0.5));
+      const d = Math.min(13, Math.max(4.6, 3.3 / f));
+      pc.position.set(0, 1.5, d);
+      pc.lookAt(0, 0.8, 0);
+      pc.setViewOffset(w, h, 0, ((1 - f) * h) / 2, w, h);
+    }
     pc.updateProjectionMatrix();
   }
 
@@ -102,6 +113,12 @@ export class Game {
     }
     this.previewCam = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
     this.setPreviewSkin({ color: 'mint', hat: 'none' });
+  }
+
+  setPreviewFrame(free) {
+    if (this.previewFree !== undefined && Math.abs((this.previewFree ?? 0) - free) < 0.01) return;
+    this.previewFree = free;
+    this.resize();
   }
 
   setPreviewShift(on) {

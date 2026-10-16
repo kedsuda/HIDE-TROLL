@@ -380,7 +380,20 @@ body.lobby-open .chat { right: auto; }
 }
 
 @media (max-width: 760px), (max-aspect-ratio: 23/20) {
-  .screen { justify-content: center; align-items: flex-end; padding-right: 16px; }
+  .screen {
+    justify-content: center; align-items: flex-end;
+    padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+  }
+  .panel { max-height: calc(100vh - 24px); }
+  .menu-panel { position: relative; width: min(440px, 100%); gap: 10px; padding: 18px 16px 14px; border-radius: 24px; }
+  .menu-panel .logo { font-size: clamp(1.9rem, 9vw, 2.4rem); padding-right: 64px; }
+  .menu-panel .tagline { font-size: 0.82rem; margin-top: -4px; }
+  .menu-panel > .coins { position: absolute; top: 18px; right: 16px; }
+  .menu-panel .row { gap: 8px; }
+  .menu-panel .btn { padding: 0.65em 0.6em; }
+  .google-box { padding: 8px 10px; }
+  .google-box .small.muted { font-size: 0.75rem; }
+  .lobby-panel { width: min(520px, 100%); padding: 16px; }
   .lobby-body, .help-cols { grid-template-columns: 1fr; }
   .room-code { font-size: 2rem; }
 }

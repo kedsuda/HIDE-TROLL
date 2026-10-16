@@ -111,7 +111,17 @@ function show(id) {
   for (const s of ['#menu', '#lobby', '#hud']) $(s).classList.toggle('hidden', s !== id);
   $('#chat').classList.toggle('hidden', id === '#menu');
   $('#chat').classList.toggle('in-game', id === '#hud');
+  requestAnimationFrame(layoutPreview);
 }
+
+// จอแนวตั้ง: บอกกล้องว่าเหลือที่ว่างเหนือเมนูเท่าไร (ตัวละครจะไปยืนตรงนั้น)
+function layoutPreview() {
+  const panel = document.querySelector('.screen:not(.hidden) > .panel');
+  if (panel) game.setPreviewFrame(panel.getBoundingClientRect().top / window.innerHeight);
+}
+const panelObserver = new ResizeObserver(() => layoutPreview());
+for (const el of document.querySelectorAll('.screen > .panel')) panelObserver.observe(el);
+window.addEventListener('resize', layoutPreview);
 
 function updateCoins() {
   for (const el of $$('.coin-val')) el.textContent = save.coins;
