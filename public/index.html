@@ -13,8 +13,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js" } }</script>
-  <script src="/socket.io/socket.io.js"></script>
+  <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.js" } }</script>
+  <script src="vendor/socket.io/socket.io.min.js"></script>
 </head>
 <body>
   <canvas id="c"></canvas>
@@ -46,6 +46,9 @@
         <button class="btn ghost" data-open="help">❓ วิธีเล่น</button>
       </div>
       <p id="menuMsg" class="msg"></p>
+      <label id="serverBox" class="field hidden">🌐 เซิร์ฟเวอร์เกม
+        <input id="serverInput" placeholder="https://..." autocomplete="off" inputmode="url">
+      </label>
     </div>
   </section>
 
@@ -72,6 +75,9 @@
               <option value="haunted">👻 บ้านผีสิง</option>
               <option value="market">🛒 ซูเปอร์มาร์เก็ต</option>
               <option value="school">🏫 โรงเรียน</option>
+              <option value="hospital">🏥 โรงพยาบาล</option>
+              <option value="warehouse">📦 โกดังสินค้า</option>
+              <option value="park">🎡 สวนสนุก</option>
             </select>
           </label>
           <label class="field">จำนวนคนสูงสุด

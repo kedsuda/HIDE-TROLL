@@ -23,7 +23,7 @@ export const MAPS = {
     sky: 0x9fd8ff, fog: null, ground: 0x8fd18a,
     floors: [0xf2efe6, 0xe2ddd0], wall: 0x7fc8f8, trim: 0xff6b6b,
     hemi: [0xffffff, 0x8899aa, 2.0], sun: [0xffffff, 1.8], lights: 0,
-    perRoom: [6, 9], aisles: true,
+    perRoom: [6, 9], aisles: 'shelf',
     props: { cart: 3, fruitbox: 3, fridge: 2, crate: 2, barrel: 1, trash: 1, cone: 1, plant: 1, shelf: 1 },
   },
   school: {
@@ -33,6 +33,30 @@ export const MAPS = {
     hemi: [0xffffff, 0x887766, 1.9], sun: [0xfff4dd, 1.8], lights: 0,
     perRoom: [5, 8], classrooms: true,
     props: { locker: 2, bookshelf: 2, globe: 1, ball: 2, trash: 1, plant: 2, table: 1, cabinet: 1, cone: 1, chair: 2, crate: 1 },
+  },
+  hospital: {
+    name: 'โรงพยาบาล', emoji: '🏥', cols: 3, rows: 3, room: 12,
+    sky: 0xbfe9ff, fog: null, ground: 0x9ad0a0,
+    floors: [0xe8f4f8, 0xd6eaf0], wall: 0xf7fbfc, trim: 0x4fc3a1,
+    hemi: [0xffffff, 0x8899aa, 1.9], sun: [0xffffff, 1.7], lights: 0,
+    perRoom: [6, 9],
+    props: { bed: 3, wheelchair: 2, ivstand: 2, medcab: 2, curtain: 1, chair: 2, plant: 1, trash: 1, cabinet: 1, tv: 1, table: 1 },
+  },
+  warehouse: {
+    name: 'โกดังสินค้า', emoji: '📦', cols: 3, rows: 2, room: 14,
+    sky: 0xc9d6e3, fog: [20, 70], ground: 0x8c8c8c,
+    floors: [0x9e9e9e, 0x8f8f8f], wall: 0xd08c3c, trim: 0x3d3d3d,
+    hemi: [0xfff4e0, 0x555555, 1.7], sun: [0xfff1d6, 1.6], lights: 0,
+    perRoom: [6, 9], aisles: 'rack',
+    props: { pallet: 2, boxstack: 4, crate: 3, barrel: 2, cone: 1, forklift: 1, trash: 1, rack: 1 },
+  },
+  park: {
+    name: 'สวนสนุก', emoji: '🎡', cols: 3, rows: 3, room: 12, wallH: 1.4,
+    sky: 0x8fd3ff, fog: null, ground: 0x7cc576,
+    floors: [0xf4d58d, 0xe9c46a], wall: 0x3fa34d, trim: 0x2e7d32,
+    hemi: [0xffffff, 0x88aa77, 1.9], sun: [0xfff4dd, 1.8], lights: 0,
+    perRoom: [6, 9], ferris: true,
+    props: { popcorn: 2, balloons: 2, teddy: 2, horse: 2, bench: 3, tree: 3, trash: 1, cone: 1, ticket: 1, duck: 2, plant: 1 },
   },
 };
 export const MAP_IDS = Object.keys(MAPS);
@@ -137,9 +161,10 @@ export function generateMap(id, seed) {
 
   for (const R of rooms) {
     if (M.aisles && rng() < 0.8) {
+      const step = PROPS[M.aisles].size[0] + 0.2;
       for (const zo of [-3.4, 2.4]) {
-        for (const xo of [-2.6, 0, 2.6]) {
-          if (rng() < 0.85) place(R, 'shelf', R.cx + xo, R.cz + zo, 0, randInt(0, 9));
+        for (const xo of [-step, 0, step]) {
+          if (rng() < 0.85) place(R, M.aisles, R.cx + xo, R.cz + zo, 0, randInt(0, 9));
         }
       }
     }
@@ -181,7 +206,7 @@ export function generateMap(id, seed) {
   });
 
   return {
-    id, theme: M, walls, props, floors, wallH: WALL_H,
+    id, theme: M, walls, props, floors, wallH: M.wallH || WALL_H,
     size: { W, D },
     spawns: { hunter: ring(hunterRoom, 1, 4), hider: ring(hiderRoom, 1.3, 10) },
   };

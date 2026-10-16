@@ -1,0 +1,12 @@
+{
+  "appId": "com.hidetroll.game",
+  "appName": "HIDE & TROLL",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

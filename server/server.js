@@ -13,7 +13,7 @@ const HIDE_TIME = Number(process.env.HIDE_TIME) || 30;  // วินาทีใ
 const HUNT_TIME = Number(process.env.HUNT_TIME) || 300; // วินาทีให้ฝ่ายล่าค้นหา (5 นาที)
 const END_TIME = Number(process.env.END_TIME) || 10;    // วินาทีแสดงผลก่อนกลับล็อบบี้
 const TICK_MS = 66;     // ~15 ครั้ง/วินาที
-const MAP_IDS = ['haunted', 'market', 'school'];
+const MAP_IDS = ['haunted', 'market', 'school', 'hospital', 'warehouse', 'park'];
 const SKILLS = {
   invis: { cd: 30, dur: 6, hiderOnly: true },
   decoy: { cd: 20, dur: 25, hiderOnly: true },
@@ -26,6 +26,7 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const app = express();
 app.use(express.static(path.join(ROOT, 'public')));
 app.use('/vendor/three', express.static(path.join(ROOT, 'node_modules/three/build')));
+app.use('/vendor/socket.io', express.static(path.join(ROOT, 'node_modules/socket.io/client-dist')));
 app.get('/health', (_req, res) => res.send('ok'));
 
 const server = http.createServer(app);

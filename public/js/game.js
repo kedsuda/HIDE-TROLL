@@ -143,6 +143,7 @@ export class Game {
     this.effects = [];
     this.scene = null;
     this.world = null;
+    this.ferris = null;
     this.me = null;
     this.setHint('');
   }
@@ -205,6 +206,8 @@ export class Game {
     }
     scene.add(propsGroup);
 
+    if (th.ferris) scene.add(this.buildFerris(map.size.D / 2 + 16));
+
     this.decoyGroup = new THREE.Group();
     scene.add(this.decoyGroup);
 
@@ -213,6 +216,31 @@ export class Game {
     scene.add(this.highlight);
 
     this.world = { map, colliders, wallGroup, propsGroup };
+  }
+
+  // ชิงช้าสวรรค์ (ฉากหลัง ไม่มีการชน)
+  buildFerris(dist) {
+    const g = new THREE.Group();
+    const R = 10;
+    const hub = R + 2;
+    const wheel = new THREE.Group();
+    wheel.add(new THREE.Mesh(new THREE.TorusGeometry(R, 0.3, 8, 64), mat(0xff70a6)));
+    wheel.add(new THREE.Mesh(new THREE.TorusGeometry(R * 0.6, 0.2, 8, 48), mat(0xffca3a)));
+    const cols = [0xff595e, 0xffca3a, 0x8ac926, 0x1982c4, 0x6a4c93, 0x4cc9f0];
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      wheel.add(part('box', 0xffffff, [0.18, R, 0.18], [Math.sin(a) * R / 2, Math.cos(a) * R / 2, 0], { r: [0, 0, -a] }));
+      const cab = part('box', cols[i % cols.length], [1.4, 1.2, 1.2], [Math.sin(a) * R, Math.cos(a) * R - 0.8, 0]);
+      wheel.add(cab);
+    }
+    wheel.position.y = hub;
+    g.add(wheel);
+    for (const s of [-1, 1]) {
+      g.add(part('box', 0xeeeeee, [0.5, hub + 1, 0.5], [s * 3.2, hub / 2, 0], { r: [0, 0, s * 0.25] }));
+    }
+    g.position.set(0, 0, -dist);
+    this.ferris = wheel;
+    return g;
   }
 
   rebuildMe() {
@@ -444,6 +472,7 @@ export class Game {
     this.updateLocal(dt, t, now);
     this.updateRemotes(dt, t);
     this.updateEffects(dt);
+    if (this.ferris) this.ferris.rotation.z += dt * 0.08;
     this.updateCamera();
     if (now - this.lastTarget > 100) {
       this.lastTarget = now;
@@ -661,6 +690,19 @@ export class Game {
       if (hit) {
         const g = findTagged(hit.object, 'propKey');
         if (g && hit.point.distanceTo(me.pos) < DISGUISE_RANGE) target = g;
+      }
+      // ช่วยเล็ง: ของชิ้นบาง (เสาน้ำเกลือ, ม้าหมุน) เลือกชิ้นที่ใกล้เป้าที่สุด
+      if (!target) {
+        const ray = this.raycaster.ray;
+        const c = new THREE.Vector3();
+        let best = 0.1;
+        for (const g of this.world.propsGroup.children) {
+          c.copy(g.position);
+          if (c.distanceTo(me.pos) > DISGUISE_RANGE) continue;
+          c.y += 0.5;
+          const ang = c.sub(ray.origin).angleTo(ray.direction);
+          if (ang < best) { best = ang; target = g; }
+        }
       }
     }
     this.target = target;

@@ -3,6 +3,7 @@ import { Input } from './input.js';
 import { COLORS, HATS } from './character.js';
 import { MAPS } from './maps.js';
 import { sfx, unlockAudio } from './audio.js';
+import { IS_APP, serverUrl, setServerUrl } from './config.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -243,7 +244,7 @@ $('#maxSelect2').addEventListener('change', () => socket.emit('settings', { maxP
 $('#btnStart').addEventListener('click', () => { unlockAudio(); sfx.click(); socket.emit('start'); });
 $('#btnLeave').addEventListener('click', leaveRoom);
 $('#btnCopy').addEventListener('click', async () => {
-  const url = `${location.origin}/?room=${room.code}`;
+  const url = `${serverUrl()}/?room=${room.code}`;
   try {
     if (navigator.share && input.touch) await navigator.share({ title: 'HIDE & TROLL', text: `มาเล่นซ่อนหากัน! รหัสห้อง ${room.code}`, url });
     else { await navigator.clipboard.writeText(url); toast('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย!'); }
@@ -467,7 +468,16 @@ function uiLoop() {
 uiLoop();
 
 // ---------- เชื่อมต่อเซิร์ฟเวอร์ ----------
-socket = io({ transports: ['websocket', 'polling'] });
+socket = io(serverUrl(), { transports: ['websocket', 'polling'] });
+
+if (IS_APP) {
+  $('#serverBox').classList.remove('hidden');
+  $('#serverInput').value = serverUrl();
+  $('#serverInput').addEventListener('change', () => {
+    setServerUrl($('#serverInput').value.trim());
+    location.reload();
+  });
+}
 
 socket.on('connect', () => menuMsg(''));
 socket.on('connect_error', () => menuMsg('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กำลังลองใหม่…'));
