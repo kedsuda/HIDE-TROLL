@@ -266,6 +266,9 @@ body.lobby-open .chat { right: auto; }
 .dl-option { border: 2px solid var(--line); border-radius: 16px; padding: 10px 14px; }
 .dl-option p { margin: 6px 0 0; }
 .dl-title { font-weight: 600; margin-bottom: 4px; }
+.pp-help { margin-top: 8px; background: rgba(255, 209, 102, 0.1); border-radius: 12px; padding: 6px 10px; }
+.pp-help summary { cursor: pointer; font-weight: 600; color: var(--accent); font-size: 0.9rem; }
+.pp-help ol { margin: 4px 0; padding-left: 1.3em; line-height: 1.6; }
 .dl-btn { display: block; text-align: center; text-decoration: none; color: inherit; }
 
 .toast {

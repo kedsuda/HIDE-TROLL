@@ -88,11 +88,16 @@ public/js/audio.js    เสียงเอฟเฟกต์ (สังเค�
 
 ```bash
 npm run apk
-# ได้ไฟล์ android/app/build/outputs/apk/debug/app-debug.apk
+# ได้ไฟล์ android/app/build/outputs/apk/release/app-release.apk
 ```
 
+APK เซ็นด้วยกุญแจ `android/hide-and-troll.keystore` + `android/keystore.properties`
+(**อยู่ในเครื่องเท่านั้น ไม่ขึ้น GitHub — สำรองไว้ให้ดี** ถ้าหาย จะอัปเดตแอปทับเครื่องที่ติดตั้งไว้ไม่ได้)
+
+ถ้ามือถือขึ้น "แอปไม่ปลอดภัย" (Play Protect): กด "รายละเอียดเพิ่มเติม" → "ติดตั้งต่อไป"
+
 > โฟลเดอร์ชื่อมี `&` ทำให้ `gradlew.bat` บางครั้งรันไม่ได้ ถ้าเจอให้ใช้ Git Bash:
-> `npm run cap:sync && cd android && ./gradlew assembleDebug`
+> `npm run cap:sync && cd android && ./gradlew assembleRelease`
 
 ## ขั้นต่อไป
 

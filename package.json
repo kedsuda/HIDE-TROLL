@@ -10,7 +10,7 @@
     "dev": "node --watch server/server.js",
     "build:www": "node scripts/build-www.mjs",
     "cap:sync": "npm run build:www && node node_modules/@capacitor/cli/bin/capacitor sync android",
-    "apk": "npm run cap:sync && cd android && gradlew.bat assembleDebug"
+    "apk": "npm run cap:sync && cd android && gradlew.bat assembleRelease"
   },
   "engines": {
     "node": ">=18"
