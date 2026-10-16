@@ -1,3 +1,4 @@
+import { VoiceChat } from './voice.js';
 import { Game } from './game.js';
 import { Input } from './input.js';
 import { COLORS, HATS, CHARACTERS, loadCharacters, isCharLoaded } from './character.js';
@@ -10,7 +11,7 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 
 // ---------- เซฟข้อมูลผู้เล่น (เหรียญ/สกิน) ในเครื่อง ----------
-const DEFAULT_SAVE = { coins: 2000, owned: [], skin: { char: 'blob', color: 'mint', hat: 'none' }, name: '' };
+const DEFAULT_SAVE = { xp: 0, wins: 0, rounds: 0, coins: 2000, owned: [], skin: { char: 'blob', color: 'mint', hat: 'none' }, name: '' };
 const save = (() => {
   try {
     return { ...DEFAULT_SAVE, ...JSON.parse(localStorage.getItem('ht_save') || '{}') };
@@ -64,6 +65,7 @@ const input = new Input($('#c'));
 if (input.touch) document.body.classList.add('is-touch');
 
 let socket = null;
+let voice = null;
 let room = null;
 let inGame = false;
 let phase = 'lobby';
@@ -134,6 +136,8 @@ for (const el of document.querySelectorAll('.screen > .panel, #shop .panel')) pa
 window.addEventListener('resize', layoutPreview);
 
 function updateCoins() {
+  const level = 1 + Math.floor((save.xp || 0) / 200);
+  $('#progressStats').textContent = `Lv.${level} • ${level >= 10 ? 'เงาไร้ร่องรอย' : level >= 5 ? 'นักซ่อนมือโปร' : 'นักซ่อนฝึกหัด'} • XP ${save.xp || 0} • ชนะ ${save.wins || 0}/${save.rounds || 0}`;
   for (const el of $$('.coin-val')) el.textContent = save.coins;
 }
 
@@ -158,12 +162,12 @@ function closeModal(el) {
     game.setPreviewShift(false);
     requestAnimationFrame(layoutPreview);
   }
-  if (inGame && $('#pause').classList.contains('hidden')) input.enabled = true;
+  if (inGame && phase !== 'ended' && allModalsClosed()) input.enabled = true;
 }
 for (const b of $$('[data-open]')) b.addEventListener('click', () => { sfx.click(); openModal(b.dataset.open); });
 for (const b of $$('[data-close]')) b.addEventListener('click', () => closeModal(b.closest('.modal')));
 for (const m of $$('.modal')) {
-  m.addEventListener('click', (e) => { if (e.target === m && m.id !== 'end') closeModal(m); });
+  m.addEventListener('click', (e) => { if (e.target === m && m.id !== 'end' && m.id !== 'caughtChoice') closeModal(m); });
 }
 
 // ---------- ทำงานแบบออฟไลน์บางส่วน (service worker) ----------
@@ -249,6 +253,7 @@ function renderShop() {
     return im;
   };
   const safe = (fn) => { try { return fn(); } catch { return null; } };
+  mk('effect', EFFECTS, $('#shopEffects'), null, (id, it) => img(null, it.icon));
   mk('char', CHARACTERS, $('#shopChars'), $('#cntChars'), (id, it) => img(
     (id === 'blob' || isCharLoaded(id)) ? safe(() => charThumb(id)) : null, it.icon,
   ));
@@ -267,6 +272,22 @@ function renderShop() {
     return img(safe(() => hatThumb(id)), '🎩');
   });
 }
+
+const EFFECTS = { none: { name: 'ไม่มีเอฟเฟกต์', price: 0, icon: '⚪' }, stars: { name: 'ประกายดาว', price: 150, icon: '✨' }, aura: { name: 'ออร่าสีม่วง', price: 150, icon: '🔮' }, frost: { name: 'เกล็ดน้ำแข็ง', price: 150, icon: '❄️' } };
+$('#lootBox').onclick = () => {
+  const pool = [['hat', HATS], ['color', COLORS], ['effect', EFFECTS]].flatMap(([kind, list]) => Object.entries(list).filter(([id, it]) => it.price > 0 && !owns(kind, id, it.price)).map(([id, it]) => ({ kind, id, name: it.name })));
+  if (!pool.length) return toast('สะสมครบแล้ว! ไม่หักเหรียญ');
+  if (save.coins < 100) return toast('ต้องมีอย่างน้อย 100 เหรียญ');
+  const item = pool[Math.floor(Math.random() * pool.length)];
+  save.coins -= 100; save.owned.push(`${item.kind}:${item.id}`); save.skin[item.kind] = item.id;
+  persist(); renderShop(); game.setPreviewSkin(save.skin);
+  if (room) socket.emit('setSkin', save.skin);
+  $('#lootResult').textContent = `🎁 ได้ ${item.name} และใส่ให้แล้ว!`; sfx.win();
+};
+for (const b of $$('[data-trap]')) b.onclick = () => input.push(b.dataset.trap);
+for (const [id, choice] of [['beGhost', 'ghost'], ['beHunter', 'hunter']]) $( '#' + id).onclick = () => {
+  socket.emit('afterCaught', choice, res => { if (res?.ok) closeModal($('#caughtChoice')); else toast('รอบนี้จบแล้ว'); });
+};
 
 // ---------- เมนูหลัก ----------
 $('#nameInput').value = save.name;
@@ -393,6 +414,7 @@ $('#btnCopy').addEventListener('click', async () => {
 });
 
 function leaveRoom() {
+  voice?.stop();
   socket.emit('leaveRoom');
   room = null;
   stopGame();
@@ -468,7 +490,8 @@ function renderSkills(team) {
   $('#hpBar').classList.toggle('hidden', team !== 'hunter');
   const badge = $('#teamBadge');
   badge.className = `badge ${team}`;
-  badge.textContent = team === 'hunter' ? '🔦 ฝ่ายล่า' : '🫥 ฝ่ายซ่อน';
+  badge.textContent = team === 'ghost' ? '👻 ผี' : team === 'caught' ? '💀 ถูกจับ' : team === 'hunter' ? '🔦 ฝ่ายล่า' : '🫥 ฝ่ายซ่อน';
+  $('#trapControls').classList.toggle('hidden', team !== 'hider');
 }
 
 $('#touch').classList.toggle('hidden', !input.touch);
@@ -497,6 +520,7 @@ function startGame(info) {
 }
 
 function stopGame() {
+  $('#trapControls').classList.add('hidden');
   inGame = false;
   myTeam = null;
   input.enabled = false;
@@ -523,6 +547,8 @@ function onPhase(info) {
   if (phase === 'hiding' || phase === 'hunting') {
     if (!inGame) startGame(info);
     game.setPhase(phase);
+    for (const trap of info.traps || []) game.addTrap(trap);
+    if (info.blackout > 0) game.blackout(info.blackout);
     if (prev === 'hiding' && phase === 'hunting') {
       sfx.go();
       toast(myTeam === 'hunter' ? '🔦 ออกล่าได้แล้ว!' : '🔦 ฝ่ายล่าออกตามหาแล้ว! อยู่นิ่งๆ');
@@ -551,16 +577,20 @@ function showEnd(d) {
     const a = document.createElement('span');
     a.textContent = `${r.team === 'hunter' ? '🔦' : r.survived ? '🫥' : '💀'} ${r.name}${r.catches ? ` • จับได้ ${r.catches}` : ''}`;
     const b = document.createElement('span');
-    b.textContent = `🪙 +${r.coins}`;
+    b.textContent = `🪙 +${r.coins} • XP +${r.xp || 0} • ซ่อน ${r.hidden || 0}s`;
     li.append(a, b);
     list.append(li);
   }
   if (mine) {
+    save.xp = (save.xp || 0) + (mine.xp || 0);
+    if (mine.ranked) { save.rounds++; if (mine.won) save.wins++; }
     save.coins += mine.coins;
     persist();
     updateCoins();
   }
   if (document.pointerLockElement) document.exitPointerLock();
+  $('#caughtChoice').classList.add('hidden');
+  input.enabled = false;
   $('#end').classList.remove('hidden');
 }
 
@@ -675,6 +705,7 @@ function showGoogleUser() {
 // รวมข้อมูลในเครื่องกับในบัญชี: เหรียญเอาค่ามากกว่า ของที่ซื้อรวมกัน สกิน/ชื่อใช้ของบัญชี
 function mergeSave(server) {
   if (server) {
+    for (const key of ['xp', 'wins', 'rounds']) save[key] = Math.max(save[key] || 0, server[key] || 0);
     save.coins = Math.max(save.coins, server.coins || 0);
     save.owned = [...new Set([...save.owned, ...(server.owned || [])])];
     save.skin = { ...save.skin, ...(server.skin || {}) };
@@ -740,6 +771,7 @@ $('#btnLogout').addEventListener('click', () => {
 socket.on('connect_error', () => netStatus(false));
 socket.io.on('reconnect_attempt', () => netStatus(false));
 socket.on('disconnect', () => {
+  voice?.stop();
   netStatus(false);
   if (room) {
     toast('หลุดการเชื่อมต่อ 😢');
@@ -752,6 +784,10 @@ socket.on('disconnect', () => {
 socket.on('room', (r) => {
   const first = !room;
   room = r;
+  voice?.roster(r.players);
+  $('#roomRanks').replaceChildren(...[...r.players].sort((a,b) => (b.stats?.hidden || 0) - (a.stats?.hidden || 0)).map(p => {
+    const li = document.createElement('li'); li.textContent = `${p.name} • ซ่อน ${p.stats?.hidden || 0}s • ชนะ ${p.stats?.wins || 0}`; return li;
+  }));
   if (first) {
     $('#chatLog').innerHTML = '';
     history.replaceState(null, '', `?room=${r.code}`);
@@ -785,10 +821,22 @@ socket.on('hp', (d) => {
 socket.on('caught', (d) => {
   game.onCaught(d);
   feed(`🎯 ${d.byName} จับ ${d.name} ได้!`);
-  if (d.id === socket.id) toast('โดนจับแล้ว! 😵 ตอนนี้คุณเป็นฝ่ายล่า ไปช่วยตามหาเลย');
+  if (d.id === socket.id) openModal('caughtChoice');
   if (d.by === socket.id) toast(`จับ ${d.name} ได้! +20 🪙`);
 });
 socket.on('roundEnd', showEnd);
+socket.on('trapAdd', d => game.addTrap(d));
+socket.on('trapRemove', d => game.removeTrap(d));
+socket.on('trapHit', d => game.trapHit(d));
+socket.on('blackout', d => game.blackout(d.duration));
+voice = new VoiceChat(socket, game, text => { $('#voiceStatus').textContent = text; });
+$('#micToggle').onclick = async () => {
+  if (!room) return toast('เข้าห้องก่อนเปิดไมค์');
+  await voice.toggle();
+};
+$('#deafen').onclick = () => { voice.deaf = !voice.deaf; $('#deafen').textContent = voice.deaf ? 'เปิดเสียงทุกคน' : 'ปิดเสียงทุกคน'; };
+$('#proximity').onchange = e => { voice.proximity = e.target.checked; };
+
 
 updateCoins();
 show('#menu');

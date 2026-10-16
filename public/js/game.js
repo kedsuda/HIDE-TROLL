@@ -4,7 +4,7 @@ import { generateMap } from './maps.js';
 import {
   buildCharacter, animateCharacter, setOpacity, makeLabel, makeEmoji, uniqueMaterials,
 } from './character.js';
-import { sfx, footsteps, stopAllFootsteps } from './audio.js';
+import { sfx, footsteps, stopAllFootsteps, haunt } from './audio.js';
 
 const GRAVITY = 24;
 const JUMP_V = 8;
@@ -55,6 +55,8 @@ export class Game {
     this.remotes = new Map();
     this.decoys = new Map();
     this.effects = [];
+    this.traps = new Map();
+    this.blackoutEnd = 0;
     this.roster = new Map();
     this.active = false;
     this.firstPerson = false;
@@ -177,6 +179,8 @@ export class Game {
     this.remotes.clear();
     this.decoys.clear();
     this.effects = [];
+    this.traps = new Map();
+    this.blackoutEnd = 0;
     this.scene = null;
     this.world = null;
     this.ferris = null;
@@ -318,11 +322,11 @@ export class Game {
     this.roster = new Map(players.map((p) => [p.id, p]));
     if (!this.active) return;
     const mine = this.roster.get(this.myId);
-    if (mine) this.setMyTeam(mine.team);
+    if (mine) { this.setMyTeam(mine.team); this.me.alive = mine.alive; }
     for (const [id, r] of this.remotes) {
       const info = this.roster.get(id);
       if (!info) { this.removeRemote(id); continue; }
-      if (info.team !== r.team || info.skin.color !== r.skin.color || info.skin.hat !== r.skin.hat) {
+      if (info.team !== r.team || info.skin.color !== r.skin.color || info.skin.hat !== r.skin.hat || info.skin.effect !== r.skin.effect) {
         r.team = info.team;
         r.skin = info.skin;
         if (r.team === 'hunter') r.prop = null;
@@ -488,6 +492,30 @@ export class Game {
     }
   }
 
+  addTrap(d) {
+    if (!this.active || this.traps.has(d.id)) return;
+    const obj = makeEmoji({ banana: '🍌', ice: '🧊', smoke: '💨' }[d.type]);
+    obj.position.set(d.x, d.y + 0.25, d.z); obj.scale.set(0.8, 0.8, 0.8);
+    this.scene.add(obj); this.traps.set(d.id, obj);
+  }
+  removeTrap({ id }) {
+    const obj = this.traps.get(id); if (!obj) return;
+    this.scene?.remove(obj); obj.material.map?.dispose(); obj.material.dispose(); this.traps.delete(id);
+  }
+  blackout(duration) { if (this.active) { this.blackoutEnd = performance.now() + duration; haunt(); } }
+  trapHit(d) {
+    if (!this.active) return;
+    if (d.type === 'smoke') {
+      const cloud = new THREE.Mesh(new THREE.SphereGeometry(4, 16, 12), new THREE.MeshBasicMaterial({ color: 0x89919c, transparent: true, opacity: 0.92, side: THREE.DoubleSide, depthWrite: false }));
+      cloud.position.set(d.x, d.y + 1, d.z);
+      this.addEffect(cloud, 6, e => { cloud.material.opacity = Math.min(0.92, e.life / 2); });
+    }
+    if (d.victim !== this.myId) return;
+    if (d.type === 'banana') this.me.stunUntil = performance.now() + 2200;
+    if (d.type === 'ice') this.me.slipUntil = performance.now() + d.duration;
+    this.hooks.toast({ banana: '🍌 ลื่นล้ม!', ice: '🧊 พื้นลื่น ควบคุมทิศทางยาก!', smoke: '💨 ระวังควันบดบังสายตา!' }[d.type]);
+  }
+
   onHp(d) {
     if (!this.active) return;
     if (d.stun > 0) {
@@ -521,6 +549,11 @@ export class Game {
     this.updateEffects(dt);
     if (this.ferris) this.ferris.rotation.z += dt * 0.08;
     this.updateCamera();
+    this.scene.traverse(o => {
+      if (!o.isLight) return;
+      if (o.userData.normalIntensity === undefined) o.userData.normalIntensity = o.intensity;
+      o.intensity = o.userData.normalIntensity * (now < this.blackoutEnd ? 0.06 : 1);
+    });
     if (now - this.lastTarget > 100) {
       this.lastTarget = now;
       this.updateTargeting();
@@ -538,7 +571,7 @@ export class Game {
 
   isFrozen(now) {
     const me = this.me;
-    return (me.team === 'hunter' && this.phase === 'hiding') || now < me.stunUntil;
+    return me.team === 'caught' || (me.team === 'hunter' && this.phase === 'hiding') || now < me.stunUntil;
   }
 
   updateLocal(dt, t, now) {
@@ -552,13 +585,13 @@ export class Game {
     for (const a of inp.consumeActions()) this.handleAction(a, now);
 
     const frozen = this.isFrozen(now);
-    const mv = frozen ? { x: 0, z: 0 } : inp.move();
+    const mv = frozen || !inp.enabled ? { x: 0, z: 0 } : inp.move();
     const speed = (me.team === 'hunter' ? HUNTER_SPEED : HIDER_SPEED) * (now < me.speedUntil ? 1.7 : 1);
     const fx = -Math.sin(me.yaw);
     const fz = -Math.cos(me.yaw);
     const wx = (fx * mv.z + Math.cos(me.yaw) * mv.x) * speed;
     const wz = (fz * mv.z - Math.sin(me.yaw) * mv.x) * speed;
-    const k = damp(me.onGround ? 14 : 4, dt);
+    const k = damp(now < me.slipUntil ? 0.45 : me.onGround ? 14 : 4, dt);
     me.vel.x += (wx - me.vel.x) * k;
     me.vel.z += (wz - me.vel.z) * k;
     me.moving = Math.hypot(wx, wz) > 0.1;
@@ -567,7 +600,11 @@ export class Game {
 
     const { r, h } = bodySize(me.prop);
     const cols = this.world.colliders.concat(this.remoteColliders());
-    me.onGround = this.moveBody(me.pos, me.vel, r, h, dt, cols);
+    if (me.team === 'ghost') {
+      me.pos.x += wx * dt; me.pos.z += wz * dt;
+      me.pos.y = Math.max(0.3, Math.min(25, me.pos.y + Math.sin(me.pitch) * mv.z * speed * dt));
+      me.onGround = false;
+    } else me.onGround = this.moveBody(me.pos, me.vel, r, h, dt, cols);
     if (me.pos.y < -8) {
       const sp = this.world.map.spawns.hider[0];
       me.pos.set(sp[0], 1, sp[1]);
@@ -583,19 +620,19 @@ export class Game {
       me.propMesh.rotation.y = me.propRy;
       me.propMesh.rotation.z = me.moving && me.onGround ? Math.sin(t * 14) * 0.07 : 0;
     }
-    const op = now < me.invisUntil ? 0.3 : 1;
+    const op = me.team === 'ghost' ? 0.3 : now < me.invisUntil ? 0.3 : 1;
     if (op !== me.op) {
       setOpacity(me.root, op);
       me.op = op;
     }
     me.root.visible = !this.firstPerson;
-    footsteps('me', me.moving && me.onGround, 0.32, now < me.speedUntil ? 1.45 : 1);
+    footsteps('me', me.team !== 'ghost' && me.moving && me.onGround, 0.32, now < me.speedUntil ? 1.45 : 1);
   }
 
   remoteColliders() {
     const out = [];
     for (const r of this.remotes.values()) {
-      if (!r.init) continue;
+      if (!r.init || r.team === 'ghost' || r.team === 'caught') continue;
       const { r: rad, h } = bodySize(r.prop);
       const p = r.root.position;
       out.push({ minX: p.x - rad, maxX: p.x + rad, minY: p.y, maxY: p.y + h, minZ: p.z - rad, maxZ: p.z + rad });
@@ -658,6 +695,9 @@ export class Game {
       case 'camera':
         this.firstPerson = !this.firstPerson;
         break;
+      case 'banana':
+      case 'ice':
+      case 'smoke':
       case 'invis':
       case 'decoy':
       case 'taunt':
@@ -763,6 +803,7 @@ export class Game {
 
     let hint = '';
     const touch = this.input.touch;
+    if (me.team === 'ghost') hint = '👻 มองขึ้น/ลง แล้วเดินหน้าเพื่อบิน • ดูเพื่อนได้โดยไม่รบกวนเกม';
     if (me.team === 'hider') {
       if (target) {
         const name = PROPS[parseKey(target.userData.propKey).type]?.name || 'สิ่งของ';
@@ -799,8 +840,8 @@ export class Game {
         r.propMesh.rotation.y = lerpAngle(r.propMesh.rotation.y, r.pr, damp(12, dt));
         r.propMesh.rotation.z = r.moving && !r.air ? Math.sin(t * 14) * 0.07 : 0;
       }
-      r.root.visible = !(r.inv && meHunter && r.team === 'hider');
-      const op = r.inv ? 0.3 : 1;
+      r.root.visible = (r.team !== 'ghost' || this.me.team === 'ghost') && !(r.inv && meHunter && r.team === 'hider');
+      const op = r.team === 'ghost' || r.inv ? 0.3 : 1;
       if (op !== r.op) {
         setOpacity(r.root, op);
         r.op = op;
@@ -808,7 +849,7 @@ export class Game {
       if (r.label) r.label.visible = r.team === 'hunter' || this.me.team === r.team;
       // เสียงเดินของคนอื่น: ยิ่งใกล้ยิ่งดัง (ได้ยินแม้ล่องหน = เบาะแสให้ฝ่ายล่า)
       const d = r.root.position.distanceTo(this.me.pos);
-      footsteps(r.id, !!r.moving && !r.air, Math.max(0, 1 - d / 22) * 0.4);
+      footsteps(r.id, r.team !== 'ghost' && !!r.moving && !r.air, Math.max(0, 1 - d / 22) * 0.4);
     }
   }
 

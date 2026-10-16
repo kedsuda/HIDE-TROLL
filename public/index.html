@@ -85,7 +85,7 @@
         <div class="settings">
           <h3>ตั้งค่าห้อง</h3>
           <label class="field">แผนที่
-            <select id="mapSelect">
+            <select id="mapSelect"><option value="abandoned">🏫 โรงเรียนร้าง</option><option value="asylum">🏥 โรงพยาบาลผีสิง</option><option value="nightpark">🎡 สวนสนุกกลางคืน</option>
               <option value="random">🎲 สุ่มแผนที่</option>
               <option value="haunted">👻 บ้านผีสิง</option>
               <option value="market">🛒 ซูเปอร์มาร์เก็ต</option>
@@ -151,6 +151,9 @@
   </div>
 
   <!-- ===== หน้าต่างย่อย ===== -->
+  <div id="caughtChoice" class="modal hidden"><div class="panel"><h2>ถูกจับแล้ว เลือกเล่นต่อ</h2><button id="beGhost" class="btn big">👻 เป็นผีบินดูเพื่อน</button><button id="beHunter" class="btn big">🔦 ช่วยฝ่ายล่า</button></div></div>
+  <div id="socialPanel"><details><summary>🎙️ เสียง / 🏆 สถิติ</summary><p id="progressStats"></p><button id="micToggle" class="btn">เปิดไมค์</button><button id="deafen" class="btn">ปิดเสียงทุกคน</button><label><input id="proximity" type="checkbox" checked> เสียงตามระยะ</label><p id="voiceStatus" role="status"></p><div id="voicePeople"></div><h4>อันดับซ่อนเก่งในห้อง</h4><ol id="roomRanks"></ol></details></div>
+  <div id="trapControls" class="hidden"><button data-trap="banana">🍌 กล้วย [1]</button><button data-trap="ice">🧊 พื้นลื่น [2]</button><button data-trap="smoke">💨 ควัน [3]</button></div>
   <div id="pause" class="modal hidden">
     <div class="panel">
       <h2>พักเกม</h2>
@@ -176,7 +179,7 @@
         <div class="coins">🪙 <b class="coin-val">0</b></div>
       </div>
       <div class="shop-sec"><span class="bar"></span><h3>หมวดหมู่ : ตัวละคร (Characters)</h3><span id="cntChars" class="count"></span></div>
-      <div id="shopChars" class="shop-grid"></div>
+      <button id="lootBox" class="btn big">🎁 เปิดกล่องสุ่ม • 100 เหรียญ</button><p class="small">สุ่มหมวก สี หรือเอฟเฟกต์ที่ยังไม่มี โอกาสเท่ากันทุกรายการ ใช้เหรียญในเกมเท่านั้น</p><p id="lootResult" role="status"></p><div id="shopEffects" class="shop-grid"></div><div id="shopChars" class="shop-grid"></div>
       <div class="shop-sec"><span class="bar"></span><h3>หมวดหมู่ : สี (ใช้กับบล็อบ)</h3><span id="cntColors" class="count"></span></div>
       <div id="shopColors" class="shop-grid"></div>
       <div class="shop-sec"><span class="bar"></span><h3>หมวดหมู่ : หมวก (Hats)</h3><span id="cntHats" class="count"></span></div>

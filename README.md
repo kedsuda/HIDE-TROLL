@@ -101,3 +101,21 @@ APK เซ็นด้วยกุญแจ `android/hide-and-troll.keystore` + 
 
 - บัญชีผู้เล่น + เก็บเหรียญบนเซิร์ฟเวอร์ (ตอนนี้เก็บใน localStorage)
 - APK แบบ release (เซ็นด้วย keystore) สำหรับลง Play Store
+
+
+## Party update
+
+- ฝ่ายซ่อนวางกล้วยด้วย `1`, พื้นลื่นด้วย `2`, ควันด้วย `3` หรือปุ่มบนจอ มีคูลดาวน์แยกกัน กับดักอยู่ 30 วินาทีและทำงานเมื่อฝ่ายล่าเดินใกล้ กล้วยหยุดการเคลื่อนไหว 2.2 วินาที พื้นลื่นลดการควบคุม 3 วินาที ควันบดบังบริเวณนั้น 6 วินาที
+- เมื่อถูกจับ เลือกช่วยฝ่ายล่าหรือเป็นผีได้ครั้งเดียวต่อรอบ ผีบินด้วยการมองขึ้น/ลงแล้วเดินหน้า ทะลุฉากได้และไม่มีปฏิสัมพันธ์กับฝ่ายที่ยังเล่นอยู่
+- เพิ่มโรงเรียนร้าง โรงพยาบาลผีสิง และสวนสนุกกลางคืน ไฟดับสุ่มจากเซิร์ฟเวอร์พร้อมเสียงหลอน โดยยังเลือกแผนที่เดิมได้
+- กล่องสุ่มราคา 100 เหรียญในร้าน ได้หมวก สี หรือเอฟเฟกต์ที่ยังไม่มี โอกาสเท่ากันในรายการที่เหลือ ไม่หักเหรียญเมื่อสะสมครบ ไม่มีการซื้อด้วยเงินจริง
+- ได้ XP และสถิติชนะหลังจบรอบจริง (โหมดฝึกไม่ให้รางวัล) ทุก 200 XP เพิ่มหนึ่งเลเวล ฉายาเปลี่ยนที่เลเวล 5 และ 10 อันดับในห้องเรียงตามเวลาซ่อนสะสมของผู้เล่นที่ยังอยู่ในห้อง รีเซ็ตเมื่อออกห้อง
+- เมนูเสียง/สถิติด้านซ้ายเปิดไมค์ ปิดไมค์ ปิดเสียงรายคนหรือทั้งหมด และเลือกเสียงตามระยะได้ ไมค์เริ่มปิด ผู้ถูกปิดไมค์ยังฟังเพื่อนได้ ผีส่งเสียงให้เฉพาะผีเพื่อป้องกันการบอกจุดซ่อน
+
+### Voice and persistence limitations
+
+Voice uses opt-in WebRTC audio with room-scoped Socket.IO signaling. Microphone access requires HTTPS (or localhost) and browser permission. The default STUN server supports direct peer connections; restrictive NAT/firewalls may require a TURN service, which is not bundled. Test actual audio on two devices and target networks before release; automated tests cover signaling isolation, not real microphone audio. Android microphone permissions and WebView behavior also require device testing.
+
+Coins, inventory and lifetime XP/win statistics retain the existing local-save/Google-save model. They are not cheat-proof: cloud saves accept client progress. Room rankings are computed by the server. Server JSON saves require persistent DATA_DIR storage to survive ephemeral hosting redeployments.
+
+Run `npm test` for the multiplayer integration check and `npm run build` to refresh the Android web assets. The APK is not rebuilt by this update.

@@ -199,6 +199,19 @@ export function uniqueMaterials(obj) {
 }
 
 export function buildCharacter(skin = {}, hunter = false) {
+  const g = buildBaseCharacter(skin, hunter);
+  const color = { stars: 0xffd166, aura: 0xa78bfa, frost: 0x67e8f9 }[skin.effect];
+  if (color) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.035, 6, 32), new THREE.MeshBasicMaterial({ color }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 0.12; g.add(ring);
+    for (let i = 0; i < 6; i++) {
+      const spark = new THREE.Mesh(new THREE.OctahedronGeometry(0.06), new THREE.MeshBasicMaterial({ color }));
+      spark.position.set(Math.cos(i) * 0.65, 0.25 + i * 0.22, Math.sin(i) * 0.65); g.add(spark);
+    }
+  }
+  return g;
+}
+function buildBaseCharacter(skin = {}, hunter = false) {
   if (skin.char && skin.char !== 'blob' && templates.has(skin.char)) return buildModelChar(skin.char, skin, hunter);
   const color = (COLORS[skin.color] || COLORS.mint).hex;
   const dark = new THREE.Color(color).multiplyScalar(0.6).getHex();

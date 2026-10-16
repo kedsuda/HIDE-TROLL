@@ -59,6 +59,12 @@ export const MAPS = {
     props: { popcorn: 2, balloons: 2, teddy: 2, horse: 2, bench: 3, tree: 3, trash: 1, cone: 1, ticket: 1, duck: 2, plant: 1 },
   },
 };
+for (const [id, base, name] of [['abandoned', 'school', 'โรงเรียนร้าง'], ['asylum', 'hospital', 'โรงพยาบาลผีสิง'], ['nightpark', 'park', 'สวนสนุกกลางคืน']]) {
+  MAPS[id] = { ...MAPS[base], name, sky: 0x090d20, fog: [8, 38], ground: 0x151522,
+    floors: [0x373744, 0x30303b], wall: 0x535362, trim: 0x282336,
+    hemi: [0x819bcf, 0x20132e, 0.85], sun: [0x899ccb, 0.65], lights: 0x99ccee,
+    props: { ...MAPS[base].props, ghost: 1, candle: 2, lamp: 2 } };
+}
 export const MAP_IDS = Object.keys(MAPS);
 
 export const WALL_H = 3.6;

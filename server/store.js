@@ -42,8 +42,11 @@ export function sanitizeSave(d) {
     skin: {
       char: str(d.skin?.char, 16) || 'blob',
       color: str(d.skin?.color, 16) || 'mint',
-      hat: str(d.skin?.hat, 16) || 'none',
+      hat: str(d.skin?.hat, 16) || 'none', effect: str(d.skin?.effect, 16) || 'none',
     },
+    xp: Math.max(0, Math.min(10000000, Number(d.xp) || 0)),
+    wins: Math.max(0, Math.min(1000000, Number(d.wins) || 0)),
+    rounds: Math.max(0, Math.min(1000000, Number(d.rounds) || 0)),
     name: str(d.name, 14),
   };
 }

@@ -1,7 +1,7 @@
 const KEYMAP = {
   Space: 'jump', KeyE: 'action', KeyQ: 'invis', KeyF: 'decoy',
   ShiftLeft: 'speed', ShiftRight: 'speed', KeyT: 'taunt', KeyR: 'lock',
-  KeyV: 'camera', KeyZ: 'revert',
+  Digit1: 'banana', Digit2: 'ice', Digit3: 'smoke', KeyV: 'camera', KeyZ: 'revert',
 };
 
 export class Input {

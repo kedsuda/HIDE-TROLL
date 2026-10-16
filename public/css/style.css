@@ -512,3 +512,9 @@ body.lobby-open .chat { right: auto; }
   .shop-sec h3 { font-size: 0.85rem; }
   .shop-sec .count { font-size: 0.65rem; padding: 1px 6px; }
 }
+
+#socialPanel { position:fixed; top:64px; left:12px; z-index:25; max-width:min(320px,80vw); background:#17172be8; color:white; border-radius:12px; padding:10px; font-size:13px; max-height:45vh; overflow:auto; }
+#socialPanel summary { cursor:pointer; } #socialPanel button { margin:4px; } #socialPanel label { display:block; }
+#trapControls { position:fixed; left:50%; transform:translateX(-50%); bottom:115px; z-index:22; display:flex; gap:5px; }
+#trapControls.hidden { display:none; } #trapControls button { background:#24243be8; color:white; border:1px solid #a78bfa; border-radius:10px; padding:10px; touch-action:manipulation; }
+@media(max-width:600px) { #socialPanel { top:55px; font-size:11px; } #trapControls { bottom:205px; } #trapControls button { font-size:11px; padding:7px; } }

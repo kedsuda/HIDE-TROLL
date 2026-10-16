@@ -151,3 +151,5 @@ export const sfx = {
   lose: safe(() => [400, 350, 300, 220].forEach((f, i) => tone(f, 0.25, 'sawtooth', 0.08, 0, i * 0.18))),
   click: safe(() => tone(700, 0.05, 'sine', 0.08)),
 };
+
+export function haunt() { tone(110, 2.8, 'sine', 0.12, 38); tone(117, 3, 'sine', 0.08, 42, 0.2); }

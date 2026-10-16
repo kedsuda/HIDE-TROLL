@@ -15,8 +15,11 @@ const HIDE_TIME = Number(process.env.HIDE_TIME) || 30;  // วินาทีใ
 const HUNT_TIME = Number(process.env.HUNT_TIME) || 300; // วินาทีให้ฝ่ายล่าค้นหา (5 นาที)
 const END_TIME = Number(process.env.END_TIME) || 10;    // วินาทีแสดงผลก่อนกลับล็อบบี้
 const TICK_MS = 66;     // ~15 ครั้ง/วินาที
-const MAP_IDS = ['haunted', 'market', 'school', 'hospital', 'warehouse', 'park'];
+const MAP_IDS = ['haunted', 'market', 'school', 'hospital', 'warehouse', 'park', 'abandoned', 'asylum', 'nightpark'];
 const SKILLS = {
+  banana: { cd: 15, dur: 30, hiderOnly: true },
+  ice: { cd: 20, dur: 30, hiderOnly: true },
+  smoke: { cd: 25, dur: 30, hiderOnly: true },
   invis: { cd: 30, dur: 6, hiderOnly: true },
   decoy: { cd: 20, dur: 25, hiderOnly: true },
   speed: { cd: 18, dur: 4, hiderOnly: false },
@@ -48,7 +51,7 @@ const num = (v, min, max) => {
 };
 const clean = (s, max) => String(s ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
 const cleanSkin = (s) => ({
-  char: clean(s?.char, 16) || 'blob', color: clean(s?.color, 16) || 'mint', hat: clean(s?.hat, 16) || 'none',
+  char: clean(s?.char, 16) || 'blob', color: clean(s?.color, 16) || 'mint', hat: clean(s?.hat, 16) || 'none', effect: clean(s?.effect, 16) || 'none',
 });
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const shuffle = (arr) => {
@@ -80,6 +83,10 @@ class Room {
     this.seed = 1;
     this.decoys = new Map();
     this.decoySeq = 0;
+    this.traps = new Map();
+    this.trapSeq = 0;
+    this.blackoutUntil = 0;
+    this.nextBlackout = Infinity;
     this.hadHunters = false;
     this.interval = setInterval(() => this.update(), TICK_MS);
   }
@@ -95,6 +102,7 @@ class Room {
       team: this.phase === 'lobby' ? 'lobby' : 'hunter',
       origTeam: 'hunter', alive: true, prop: null, state: null,
       cds: {}, invisUntil: 0, hp: 100, stunUntil: 0,
+      stats: { xp: 0, wins: 0, rounds: 0, hidden: 0 }, caughtAt: 0, choiceMade: false,
       earned: 0, catches: 0, taunts: 0, lastShot: 0, lastChat: 0,
     };
     this.players.set(socket.id, p);
@@ -133,7 +141,7 @@ class Room {
       code: this.code, hostId: this.hostId, maxPlayers: this.maxPlayers,
       mapChoice: this.mapChoice, phase: this.phase,
       players: [...this.players.values()].map((p) => ({
-        id: p.id, name: p.name, skin: p.skin, team: p.team, alive: p.alive, pic: p.pic,
+        id: p.id, name: p.name, skin: p.skin, team: p.team, alive: p.alive, pic: p.pic, stats: p.stats,
       })),
     };
   }
@@ -144,7 +152,7 @@ class Room {
       phase: this.phase,
       remaining: Math.max(0, this.phaseEndsAt - Date.now()),
       mapId: this.mapId, seed: this.seed,
-      decoys: [...this.decoys.values()],
+      decoys: [...this.decoys.values()], traps: [...this.traps.values()], blackout: Math.max(0, this.blackoutUntil - Date.now()),
     };
   }
 
@@ -166,8 +174,12 @@ class Room {
         team: i < hunters ? 'hunter' : 'hider', alive: true, prop: null, state: null,
         cds: {}, invisUntil: 0, hp: 100, stunUntil: 0, earned: 0, catches: 0, taunts: 0,
       });
-      p.origTeam = p.team;
+      p.origTeam = p.team; p.caughtAt = 0; p.choiceMade = false;
     });
+    this.roundStarted = Date.now();
+    this.traps.clear();
+    this.blackoutUntil = 0;
+    this.nextBlackout = Date.now() + 15000 + Math.random() * 20000;
     this.hadHunters = hunters > 0;
     this.mapId = MAP_IDS.includes(this.mapChoice) ? this.mapChoice : pick(MAP_IDS);
     this.seed = Math.floor(Math.random() * 1e9);
@@ -188,6 +200,22 @@ class Room {
         this.endRound('hider');
       } else if (this.phase === 'ended') {
         this.toLobby();
+      }
+    }
+    if (this.inMatch()) {
+      if (['abandoned', 'asylum', 'nightpark', 'haunted'].includes(this.mapId) && now >= this.nextBlackout) {
+        this.blackoutUntil = now + 4000 + Math.random() * 3000;
+        this.nextBlackout = this.blackoutUntil + 18000 + Math.random() * 22000;
+        this.emit('blackout', { duration: this.blackoutUntil - now });
+      }
+      for (const [id, trap] of this.traps) {
+        if (now >= trap.expires) { this.traps.delete(id); this.emit('trapRemove', { id }); continue; }
+        if (this.phase !== 'hunting') continue;
+        const victim = [...this.players.values()].find(p => p.team === 'hunter' && p.state && dist(p.state, trap) < 1.8);
+        if (!victim) continue;
+        this.traps.delete(id); this.emit('trapRemove', { id });
+        if (trap.type === 'banana') victim.stunUntil = now + 2200;
+        this.emit('trapHit', { ...trap, victim: victim.id, duration: trap.type === 'smoke' ? 6000 : 3000 });
       }
     }
     for (const [id, d] of this.decoys) {
@@ -214,7 +242,12 @@ class Room {
         if (winner === 'hider' && p.origTeam === 'hider' && p.alive) coins += 50;
         if (winner === 'hunter' && p.origTeam === 'hunter') coins += 40;
       }
-      rewards.push({
+      const won = winner === p.origTeam && (p.origTeam !== 'hider' || p.alive);
+      const xp = this.hadHunters ? 20 + p.catches * 15 + (won ? 50 : 0) : 0;
+      const hidden = p.origTeam === 'hider' ? Math.floor(((p.caughtAt || Date.now()) - this.roundStarted) / 1000) : 0;
+      if (this.hadHunters) { p.stats.xp += xp; p.stats.rounds++; p.stats.wins += won ? 1 : 0; p.stats.hidden += hidden; }
+      rewards.push({ xp, won, ranked: this.hadHunters, hidden,
+
         id: p.id, name: p.name, coins, catches: p.catches, team: p.origTeam,
         survived: p.origTeam === 'hider' && p.alive,
       });
@@ -229,6 +262,7 @@ class Room {
       Object.assign(p, { team: 'lobby', alive: true, prop: null, state: null, invisUntil: 0 });
     }
     this.decoys.clear();
+    this.traps.clear();
     this.phase = 'lobby';
     this.broadcastRoom();
     this.emit('phase', { phase: 'lobby', remaining: 0 });
@@ -297,7 +331,8 @@ class Room {
 
   catchPlayer(t, by) {
     t.alive = false;
-    t.team = 'hunter';
+    t.team = 'caught';
+    t.caughtAt = Date.now();
     t.prop = null;
     t.invisUntil = 0;
     t.hp = 100;
@@ -312,14 +347,18 @@ class Room {
   onSkill(p, type, cb) {
     const sk = SKILLS[type];
     const now = Date.now();
-    if (!sk || !this.inMatch()) return cb({ ok: false });
+    if (!sk || !this.inMatch() || !['hider', 'hunter'].includes(p.team)) return cb({ ok: false });
     if (sk.hiderOnly && (p.team !== 'hider' || !p.alive)) return cb({ ok: false, msg: 'สกิลนี้ใช้ได้เฉพาะฝ่ายซ่อน' });
     if (p.team === 'hunter' && this.phase === 'hiding') return cb({ ok: false, msg: 'รอให้ถึงช่วงล่าก่อน' });
     if (now < (p.cds[type] || 0)) return cb({ ok: false, wait: p.cds[type] - now });
-    if (type === 'decoy' && !p.state) return cb({ ok: false });
+    if (['decoy', 'banana', 'ice', 'smoke'].includes(type) && !p.state) return cb({ ok: false });
     p.cds[type] = now + sk.cd * 1000;
 
-    if (type === 'invis') {
+    if (['banana', 'ice', 'smoke'].includes(type)) {
+      if (this.traps.size >= 30) { cb({ ok: false, msg: 'กับดักในห้องเต็มแล้ว' }); return; }
+      const trap = { id: ++this.trapSeq, owner: p.id, type, x: p.state.x, y: p.state.y, z: p.state.z, expires: now + 30000 };
+      this.traps.set(trap.id, trap); this.emit('trapAdd', trap);
+    } else if (type === 'invis') {
       p.invisUntil = now + sk.dur * 1000;
       this.emit('fx', { type, id: p.id, dur: sk.dur });
     } else if (type === 'speed') {
@@ -346,6 +385,8 @@ class Room {
 function leave(socket) {
   const r = socket.data.room;
   if (!r) return;
+  socket.to(r.ch).emit('voiceReady', { id: socket.id, ready: false });
+  socket.data.voiceReady = false;
   socket.leave(r.ch);
   socket.data.room = null;
   r.remove(socket.id);
@@ -421,6 +462,29 @@ io.on('connection', (socket) => {
     socket.data.room.broadcastRoom();
   });
 
+  socket.on('afterCaught', (choice, cb) => {
+    const p = me(), r = socket.data.room;
+    if (!p || !r.inMatch() || p.team !== 'caught' || p.choiceMade || !['ghost', 'hunter'].includes(choice)) return ack(cb)({ ok: false });
+    p.choiceMade = true; p.team = choice; r.broadcastRoom(); ack(cb)({ ok: true });
+  });
+  socket.on('voiceReady', (ready) => {
+    socket.data.voiceReady = ready === true;
+    if (socket.data.room) socket.to(socket.data.room.ch).emit('voiceReady', { id: socket.id, ready: ready === true });
+  });
+  socket.on('voiceSignal', (d) => {
+    const r = socket.data.room;
+    if (!r || !socket.data.voiceReady || !r.players.has(d?.to) || d.to === socket.id) return;
+    const target = io.sockets.sockets.get(d.to);
+    if (!target?.data.voiceReady) return;
+    const signalWindow = Math.floor(Date.now() / 1000);
+    if (socket.data.signalWindow !== signalWindow) { socket.data.signalWindow = signalWindow; socket.data.signalCount = 0; }
+    if (++socket.data.signalCount > 100) return;
+    if (!d.description && !d.candidate) return;
+    if (JSON.stringify(d).length > 16000) return;
+    socket.data.lastSignal = Date.now();
+    target.emit('voiceSignal', { from: socket.id, description: d.description, candidate: d.candidate });
+  });
+  socket.on('voicePeers', (_, cb) => ack(cb)([...(socket.data.room?.players.keys() || [])].filter(id => id !== socket.id && io.sockets.sockets.get(id)?.data.voiceReady)));
   socket.on('state', (s) => { const p = me(); if (p) socket.data.room.onState(p, s); });
   socket.on('disguise', (k) => { const p = me(); if (p) socket.data.room.onDisguise(p, k); });
   socket.on('shoot', (d) => { const p = me(); if (p) socket.data.room.onShoot(p, d); });
