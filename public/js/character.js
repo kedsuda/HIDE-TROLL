@@ -13,6 +13,8 @@ export const CHARACTERS = {
   porter: { name: 'แมวพอร์เตอร์', icon: '🐱', price: 0, file: 'models/porter.glb', yaw: 0, hat: { y: 1.36, z: 0.27, s: 0.72 } },
   doraemon: { name: 'โดราเอมอน', icon: '🔔', price: 0, file: 'models/doraemon.glb', yaw: 0, hat: { y: 1.42, z: 0, s: 1.05 } },
   ods: { name: 'กวางน้อย', icon: '🦌', price: 0, file: 'models/ods.glb', yaw: 0, hat: { y: 1.06, z: 0.27, s: 0.7 } },
+  bunny201: { name: 'กระต่าย', icon: '🐰', price: 0, file: 'models/character201_bunny.glb', yaw: 0, hat: { y: 1.35, z: 0, s: 0.8 } },
+  scoobert: { name: 'สกูเบิร์ต', icon: '🐶', price: 0, file: 'models/scoobert_doobert_character_mesh.glb', yaw: 0, hat: { y: 1.42, z: 0, s: 1 } },
 };
 const BLOB_HEAD_TOP = 1.51;
 
