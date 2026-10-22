@@ -83,8 +83,8 @@ export function stopAllFootsteps() {
   for (const id of [...steps.keys()]) footsteps(id, false);
 }
 
-// ---- เพลงประกอบ (วนซ้ำ): หน้าแรก/ล็อบบี้ และตอนเล่น ----
-const MUSIC_FILES = { menu: 'sounds/menu.mp3', game: 'sounds/music.mp3' };
+// ---- เพลงประกอบ (วนซ้ำ): หน้าแรก/ล็อบบี้, ตอนเล่น และตอนเล่นแมพผี ----
+const MUSIC_FILES = { menu: 'sounds/menu.mp3', game: 'sounds/music.mp3', horror: 'sounds/horror.mp3' };
 const tracks = {};
 let current = null;
 

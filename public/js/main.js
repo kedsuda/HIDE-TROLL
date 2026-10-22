@@ -127,7 +127,7 @@ function show(id) {
   for (const s of ['#menu', '#lobby', '#hud']) $(s).classList.toggle('hidden', s !== id);
   $('#chat').classList.toggle('hidden', id === '#menu');
   $('#chat').classList.toggle('in-game', id === '#hud');
-  playMusic(id === '#hud' ? 'game' : 'menu');
+  if (id !== '#hud') playMusic('menu');
   // ในล็อบบี้ให้แชตอยู่ในแผงเลย จะได้ไม่ลอยทับปุ่มสกิน/ออกจากห้องบนจอมือถือ
   if (id === '#lobby') $('#lobby .lobby-panel').insertBefore($('#chat'), $('#lobby .lobby-panel > .row'));
   else if ($('#chat').parentElement !== document.body) document.body.append($('#chat'));
@@ -538,6 +538,7 @@ function startGame(info) {
   updateCounts();
   show('#hud');
   const m = MAPS[info.mapId];
+  playMusic(m.horror ? 'horror' : 'game');
   toast(`${m.emoji} ${m.name} — คุณคือ${me.team === 'hunter' ? 'ฝ่ายล่า 🔦' : 'ฝ่ายซ่อน 🫥'}`);
 }
 

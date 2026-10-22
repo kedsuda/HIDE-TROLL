@@ -11,7 +11,7 @@ export function mulberry32(a) {
 
 export const MAPS = {
   haunted: {
-    name: 'บ้านผีสิง', emoji: '👻', cols: 3, rows: 3, room: 12,
+    name: 'บ้านผีสิง', emoji: '👻', cols: 3, rows: 3, room: 12, horror: true,
     sky: 0x1b1033, fog: [14, 60], ground: 0x2a2140,
     floors: [0x5a4670, 0x4c3a60], wall: 0x7a5c8f, trim: 0x3a2850,
     hemi: [0xc9b8ff, 0x302040, 1.6], sun: [0xc8b8ff, 1.4], lights: 0xffa040,
@@ -60,7 +60,7 @@ export const MAPS = {
   },
 };
 for (const [id, base, name] of [['abandoned', 'school', 'โรงเรียนร้าง'], ['asylum', 'hospital', 'โรงพยาบาลผีสิง'], ['nightpark', 'park', 'สวนสนุกกลางคืน']]) {
-  MAPS[id] = { ...MAPS[base], name, sky: 0x090d20, fog: [8, 38], ground: 0x151522,
+  MAPS[id] = { ...MAPS[base], name, horror: true, sky: 0x090d20, fog: [8, 38], ground: 0x151522,
     floors: [0x373744, 0x30303b], wall: 0x535362, trim: 0x282336,
     hemi: [0x819bcf, 0x20132e, 0.85], sun: [0x899ccb, 0.65], lights: 0x99ccee,
     props: { ...MAPS[base].props, ghost: 1, candle: 2, lamp: 2 } };
