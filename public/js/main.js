@@ -538,7 +538,7 @@ function startGame(info) {
   updateCounts();
   show('#hud');
   const m = MAPS[info.mapId];
-  playMusic(m.horror ? 'horror' : 'game');
+  playMusic(m.horror && me.team === 'hunter' ? 'horror' : 'game');
   toast(`${m.emoji} ${m.name} — คุณคือ${me.team === 'hunter' ? 'ฝ่ายล่า 🔦' : 'ฝ่ายซ่อน 🫥'}`);
 }
 
