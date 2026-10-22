@@ -1,6 +1,6 @@
 // Service worker: ใช้ไฟล์จากเน็ตก่อนเสมอ (ได้เวอร์ชันล่าสุด) และใช้สำเนาในเครื่องเฉพาะตอนออฟไลน์
 // เปลี่ยนเลข CACHE ทุกครั้งที่อยากล้างสำเนาเก่าในเครื่องผู้เล่น
-const CACHE = 'ht-v4';
+const CACHE = 'ht-v5';
 
 self.addEventListener('install', () => self.skipWaiting());
 
