@@ -4,7 +4,7 @@ import { Input } from './input.js';
 import { COLORS, HATS, CHARACTERS, loadCharacters, isCharLoaded } from './character.js';
 import { hatThumb, charThumb } from './thumbs.js';
 import { MAPS } from './maps.js';
-import { sfx, unlockAudio } from './audio.js';
+import { sfx, unlockAudio, playMusic, stopMusic } from './audio.js';
 import { IS_APP, serverUrl, setServerUrl, GOOGLE_CLIENT_ID, GOOGLE_ORIGINS } from './config.js';
 
 const $ = (s) => document.querySelector(s);
@@ -127,6 +127,9 @@ function show(id) {
   for (const s of ['#menu', '#lobby', '#hud']) $(s).classList.toggle('hidden', s !== id);
   $('#chat').classList.toggle('hidden', id === '#menu');
   $('#chat').classList.toggle('in-game', id === '#hud');
+  // ในล็อบบี้ให้แชตอยู่ในแผงเลย จะได้ไม่ลอยทับปุ่มสกิน/ออกจากห้องบนจอมือถือ
+  if (id === '#lobby') $('#lobby .lobby-panel').insertBefore($('#chat'), $('#lobby .lobby-panel > .row'));
+  else if ($('#chat').parentElement !== document.body) document.body.append($('#chat'));
   requestAnimationFrame(layoutPreview);
 }
 
@@ -445,16 +448,18 @@ function addChat(m) {
   while (log.children.length > 60) log.firstChild.remove();
   log.scrollTop = log.scrollHeight;
 }
+// ใช้ submit ของฟอร์ม: ได้ทั้งปุ่ม Enter บนคีย์บอร์ดคอม และปุ่มส่ง/ปุ่ม "ส่ง" บนมือถือ
+$('#chatForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const el = $('#chatInput');
+  const t = el.value.trim();
+  if (t) socket.emit('chat', t);
+  el.value = '';
+  if (inGame) el.blur();
+});
 $('#chatInput').addEventListener('keydown', (e) => {
   e.stopPropagation();
-  if (e.key === 'Enter') {
-    const t = e.target.value.trim();
-    if (t) socket.emit('chat', t);
-    e.target.value = '';
-    if (inGame) e.target.blur();
-  } else if (e.key === 'Escape') {
-    e.target.blur();
-  }
+  if (e.key === 'Escape') e.target.blur();
 });
 $('#chatInput').addEventListener('focus', () => { if (inGame) input.enabled = false; });
 $('#chatInput').addEventListener('blur', () => { if (inGame && allModalsClosed()) input.enabled = true; });
@@ -531,6 +536,7 @@ function startGame(info) {
   updateHp(100);
   updateCounts();
   show('#hud');
+  playMusic();
   const m = MAPS[info.mapId];
   toast(`${m.emoji} ${m.name} — คุณคือ${me.team === 'hunter' ? 'ฝ่ายล่า 🔦' : 'ฝ่ายซ่อน 🫥'}`);
 }
@@ -541,6 +547,7 @@ function stopGame() {
   inGame = false;
   myTeam = null;
   input.enabled = false;
+  stopMusic();
   game.stop();
   for (const m of $$('.modal')) m.classList.add('hidden');
   if (document.pointerLockElement) document.exitPointerLock();

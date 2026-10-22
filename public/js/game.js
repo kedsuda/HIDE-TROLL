@@ -794,9 +794,9 @@ export class Game {
       else if (pr) {
         data.prop = 1;
         this.floatText(end, '-5 HP');
-        sfx.miss();
       }
     }
+    if (!data.target) sfx.miss();
     this.hooks.shoot(data);
     this.tracer(muzzle, end, 0xffe14d);
     this.puff(end, 0xffffff, 6);

@@ -312,10 +312,19 @@ body.is-touch .hp { bottom: auto; top: 86px; }
 .chat-log .n-hunter { color: var(--hunter); font-weight: 600; }
 .chat-log .n-lobby { color: #b9a8ff; font-weight: 600; }
 .chat input { pointer-events: auto; background: rgba(20, 10, 40, 0.7); padding: 0.4em 0.8em; }
+.chat-form { display: flex; gap: 6px; margin: 0; }
+.chat-form input { flex: 1; min-width: 0; }
+.chat-send { display: none; pointer-events: auto; box-shadow: none; }
+body.is-touch .chat-send { display: block; }
+body.is-touch .chat.in-game .chat-send { padding: 0.2em 0.7em; font-size: 0.75rem; opacity: 0.7; }
+/* ในล็อบบี้แชตเป็นส่วนหนึ่งของแผง ไม่ลอยทับปุ่ม */
+.lobby-panel .chat { position: static; width: auto; pointer-events: auto; }
+.lobby-panel .chat-log { max-height: 110px; }
+.lobby-panel .chat-log:empty { display: none; }
 .chat.in-game input { opacity: 0; transition: opacity 0.15s; }
 .chat.in-game input:focus { opacity: 1; }
 .chat.in-game .chat-log { pointer-events: none; }
-body.is-touch .chat.in-game { bottom: auto; top: 70px; width: 46vw; }
+body.is-touch .chat.in-game { bottom: auto; top: 110px; width: 46vw; }
 body.is-touch .chat.in-game .chat-log { max-height: 90px; font-size: 0.75rem; }
 body.is-touch .chat.in-game input { opacity: 0.7; font-size: 0.8rem; }
 body.lobby-open .chat { right: auto; }
@@ -386,7 +395,7 @@ body.lobby-open .chat { right: auto; }
   .lobby-panel { gap: 8px; padding: 14px 18px; }
   .room-code { font-size: 1.8rem; }
   .player-list li { padding: 5px 10px; }
-  body.is-touch .chat.in-game { top: 62px; width: 28vw; }
+  body.is-touch .chat.in-game { top: 106px; width: 32vw; }
   body.is-touch .chat.in-game input { padding: 0.25em 0.6em; font-size: 0.75rem; opacity: 0.45; }
   body.is-touch .chat.in-game .chat-log { max-height: 64px; font-size: 0.7rem; }
   .top-bar { gap: 8px; }
@@ -422,14 +431,14 @@ body.lobby-open .chat { right: auto; }
   #phaseLabel { font-size: 0.6rem; white-space: nowrap; }
   #timer { font-size: 1.25rem; }
   .corner-btn { width: 40px; height: 40px; font-size: 1.1rem; right: 8px; }
-  .hint, body.is-touch .hint { top: 104px; bottom: auto; font-size: 0.78rem; padding: 3px 12px; white-space: normal; text-align: center; width: max-content; max-width: 86vw; }
+  .hint, body.is-touch .hint { top: 180px; bottom: auto; font-size: 0.78rem; padding: 3px 12px; white-space: normal; text-align: center; width: max-content; max-width: 86vw; }
   .feed { top: 64px; right: 8px; max-width: 70vw; }
   .feed div { font-size: 0.75rem; }
   body.is-touch .hp { top: 62px; width: 150px; height: 16px; }
   body.is-touch .hp span { line-height: 12px; font-size: 0.65rem; }
   .toast { top: 16%; font-size: 0.85rem; padding: 6px 14px; }
 
-  body.is-touch .chat.in-game { top: 58px; left: 8px; width: 58vw; }
+  body.is-touch .chat.in-game { top: 96px; left: 8px; width: 56vw; }
   body.is-touch .chat.in-game .chat-log { max-height: 48px; font-size: 0.66rem; }
   body.is-touch .chat.in-game input { font-size: 0.72rem; padding: 0.2em 0.6em; opacity: 0.4; }
 

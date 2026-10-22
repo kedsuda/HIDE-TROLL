@@ -9,7 +9,7 @@ function ac() {
 }
 
 // ---- ไฟล์เสียงจริง (โหลดครั้งเดียวหลังผู้เล่นกดปุ่มแรก) ----
-const SAMPLE_FILES = { shotgun: 'sounds/shotgun.mp3', footsteps: 'sounds/footsteps.mp3' };
+const SAMPLE_FILES = { shotgun: 'sounds/shotgun.mp3', footsteps: 'sounds/footsteps.mp3', miss: 'sounds/miss.mp3' };
 const samples = {};
 const playing = [];
 
@@ -83,6 +83,26 @@ export function stopAllFootsteps() {
   for (const id of [...steps.keys()]) footsteps(id, false);
 }
 
+// ---- เพลงประกอบตอนเล่น (วนซ้ำ) ----
+let music = null;
+
+export function playMusic() {
+  try {
+    if (!music) {
+      music = new Audio('sounds/music.mp3');
+      music.loop = true;
+      music.volume = 0.3;
+    }
+    music.currentTime = 0;
+    // เบราว์เซอร์ยังไม่ให้เล่นเสียง: รอให้แตะจอครั้งถัดไปแล้วค่อยเล่น
+    music.play().catch(() => addEventListener('pointerdown', () => music.play().catch(() => {}), { once: true }));
+  } catch { /* ไม่มีเพลงก็เล่นได้ */ }
+}
+
+export function stopMusic() {
+  if (music) music.pause();
+}
+
 export function unlockAudio() {
   try {
     ac();
@@ -140,7 +160,7 @@ export const sfx = {
   }),
   poof: safe((v = 1) => { noise(0.25, 0.12 * v); tone(300, 0.2, 'sine', 0.1 * v, 500); }),
   caught: safe(() => [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.15, 'triangle', 0.15, 0, i * 0.08))),
-  miss: safe(() => tone(220, 0.25, 'sawtooth', 0.08, -120)),
+  miss: safe(() => { if (!playSample('miss', 0.8)) tone(220, 0.25, 'sawtooth', 0.08, -120); }),
   skill: safe((v = 1) => tone(500, 0.18, 'sine', 0.14 * v, 700)),
   invis: safe((v = 1) => { tone(1200, 0.4, 'sine', 0.1 * v, -900); noise(0.3, 0.05 * v); }),
   taunt: safe((n) => TAUNTS[n % TAUNTS.length]()),

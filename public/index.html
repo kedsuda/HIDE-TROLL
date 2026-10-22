@@ -149,7 +149,10 @@
   <!-- ===== แชต ===== -->
   <div id="chat" class="chat hidden">
     <div id="chatLog" class="chat-log"></div>
-    <input id="chatInput" maxlength="120" placeholder="พิมพ์แชต… (Enter)" autocomplete="off">
+    <form id="chatForm" class="chat-form" autocomplete="off">
+      <input id="chatInput" maxlength="120" placeholder="พิมพ์แชต… (Enter)" autocomplete="off" enterkeyhint="send">
+      <button type="submit" class="btn small chat-send">ส่ง</button>
+    </form>
   </div>
 
   <!-- ===== หน้าต่างย่อย ===== -->
