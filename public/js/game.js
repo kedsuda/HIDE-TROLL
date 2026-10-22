@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PROPS, buildProp, parseKey, part, mat } from './props.js';
-import { generateMap } from './maps.js';
+import { generateMap, WALL_T } from './maps.js';
 import {
   buildCharacter, animateCharacter, setOpacity, makeLabel, makeEmoji, uniqueMaterials,
 } from './character.js';
@@ -636,6 +636,7 @@ export class Game {
       me.pos.y = Math.max(0.3, Math.min(25, me.pos.y + Math.sin(me.pitch) * mv.z * speed * dt));
       me.onGround = false;
     } else me.onGround = this.moveBody(me.pos, me.vel, r, h, dt, cols);
+    this.keepInside(me.pos, r);
     if (me.pos.y < -8) {
       const sp = this.world.map.spawns.hider[0];
       me.pos.set(sp[0], 1, sp[1]);
@@ -671,11 +672,22 @@ export class Game {
     return out;
   }
 
+  // กันหลุดออกนอกแผนที่ (รวมโหมดผีที่บินทะลุผนังด้านในได้)
+  keepInside(pos, r) {
+    const { W, D } = this.world.map.size;
+    const mx = W / 2 - WALL_T / 2 - r;
+    const mz = D / 2 - WALL_T / 2 - r;
+    pos.x = Math.max(-mx, Math.min(mx, pos.x));
+    pos.z = Math.max(-mz, Math.min(mz, pos.z));
+  }
+
   moveBody(pos, vel, r, h, dt, cols) {
+    let prev = pos.x;
     pos.x += vel.x * dt;
-    this.resolve(pos, r, h, cols, 'x');
+    this.resolve(pos, r, h, cols, 'x', prev);
+    prev = pos.z;
     pos.z += vel.z * dt;
-    this.resolve(pos, r, h, cols, 'z');
+    this.resolve(pos, r, h, cols, 'z', prev);
     vel.y -= GRAVITY * dt;
     pos.y += vel.y * dt;
     let ground = 0;
@@ -691,12 +703,14 @@ export class Game {
     return false;
   }
 
-  resolve(pos, r, h, cols, axis) {
+  // ดันออกไปฝั่งที่เดินเข้ามา (ไม่ใช่ฝั่งที่ใกล้กลางกล่องกว่า) จะได้ไม่ทะลุผนังออกไปอีกด้าน
+  resolve(pos, r, h, cols, axis, prev) {
     for (const b of cols) {
       if (b.maxY <= pos.y + STEP_H || b.minY >= pos.y + h) continue;
       if (pos.x + r <= b.minX || pos.x - r >= b.maxX || pos.z + r <= b.minZ || pos.z - r >= b.maxZ) continue;
-      if (axis === 'x') pos.x = pos.x < (b.minX + b.maxX) / 2 ? b.minX - r - 0.001 : b.maxX + r + 0.001;
-      else pos.z = pos.z < (b.minZ + b.maxZ) / 2 ? b.minZ - r - 0.001 : b.maxZ + r + 0.001;
+      const [min, max] = axis === 'x' ? [b.minX, b.maxX] : [b.minZ, b.maxZ];
+      const from = prev + r <= min ? -1 : prev - r >= max ? 1 : prev < (min + max) / 2 ? -1 : 1;
+      pos[axis] = from < 0 ? min - r - 0.001 : max + r + 0.001;
     }
   }
 

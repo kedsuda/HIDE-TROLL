@@ -68,7 +68,7 @@ for (const [id, base, name] of [['abandoned', 'school', 'โรงเรีย�
 export const MAP_IDS = Object.keys(MAPS);
 
 export const WALL_H = 3.6;
-const WALL_T = 0.4;
+export const WALL_T = 0.4;
 const DOOR = 2.8;
 
 // สร้างแผนที่จาก seed เดียวกัน => ทุกเครื่องได้ฉากเหมือนกัน แต่สุ่มใหม่ทุกรอบ

@@ -4,7 +4,7 @@ import { Input } from './input.js';
 import { COLORS, HATS, CHARACTERS, loadCharacters, isCharLoaded } from './character.js';
 import { hatThumb, charThumb } from './thumbs.js';
 import { MAPS } from './maps.js';
-import { sfx, unlockAudio, playMusic, stopMusic } from './audio.js';
+import { sfx, unlockAudio, playMusic } from './audio.js';
 import { IS_APP, serverUrl, setServerUrl, GOOGLE_CLIENT_ID, GOOGLE_ORIGINS } from './config.js';
 
 const $ = (s) => document.querySelector(s);
@@ -127,6 +127,7 @@ function show(id) {
   for (const s of ['#menu', '#lobby', '#hud']) $(s).classList.toggle('hidden', s !== id);
   $('#chat').classList.toggle('hidden', id === '#menu');
   $('#chat').classList.toggle('in-game', id === '#hud');
+  playMusic(id === '#hud' ? 'game' : 'menu');
   // ในล็อบบี้ให้แชตอยู่ในแผงเลย จะได้ไม่ลอยทับปุ่มสกิน/ออกจากห้องบนจอมือถือ
   if (id === '#lobby') $('#lobby .lobby-panel').insertBefore($('#chat'), $('#lobby .lobby-panel > .row'));
   else if ($('#chat').parentElement !== document.body) document.body.append($('#chat'));
@@ -536,7 +537,6 @@ function startGame(info) {
   updateHp(100);
   updateCounts();
   show('#hud');
-  playMusic();
   const m = MAPS[info.mapId];
   toast(`${m.emoji} ${m.name} — คุณคือ${me.team === 'hunter' ? 'ฝ่ายล่า 🔦' : 'ฝ่ายซ่อน 🫥'}`);
 }
@@ -547,7 +547,6 @@ function stopGame() {
   inGame = false;
   myTeam = null;
   input.enabled = false;
-  stopMusic();
   game.stop();
   for (const m of $$('.modal')) m.classList.add('hidden');
   if (document.pointerLockElement) document.exitPointerLock();

@@ -83,24 +83,37 @@ export function stopAllFootsteps() {
   for (const id of [...steps.keys()]) footsteps(id, false);
 }
 
-// ---- เพลงประกอบตอนเล่น (วนซ้ำ) ----
-let music = null;
+// ---- เพลงประกอบ (วนซ้ำ): หน้าแรก/ล็อบบี้ และตอนเล่น ----
+const MUSIC_FILES = { menu: 'sounds/menu.mp3', game: 'sounds/music.mp3' };
+const tracks = {};
+let current = null;
 
-export function playMusic() {
+function tryPlay() {
+  const t = current && tracks[current];
+  if (t && t.paused) t.play().catch(() => { /* รอผู้เล่นแตะจอก่อน */ });
+}
+// เบราว์เซอร์ไม่ให้เล่นเสียงจนกว่าผู้เล่นจะแตะจอ/กดปุ่มครั้งแรก
+addEventListener('pointerdown', tryPlay);
+addEventListener('keydown', tryPlay);
+
+export function playMusic(name) {
+  if (current === name) return tryPlay();
+  stopMusic();
+  current = name;
   try {
-    if (!music) {
-      music = new Audio('sounds/music.mp3');
-      music.loop = true;
-      music.volume = 0.3;
+    if (!tracks[name]) {
+      tracks[name] = new Audio(MUSIC_FILES[name]);
+      tracks[name].loop = true;
+      tracks[name].volume = 0.3;
     }
-    music.currentTime = 0;
-    // เบราว์เซอร์ยังไม่ให้เล่นเสียง: รอให้แตะจอครั้งถัดไปแล้วค่อยเล่น
-    music.play().catch(() => addEventListener('pointerdown', () => music.play().catch(() => {}), { once: true }));
+    tracks[name].currentTime = 0;
+    tryPlay();
   } catch { /* ไม่มีเพลงก็เล่นได้ */ }
 }
 
 export function stopMusic() {
-  if (music) music.pause();
+  if (current && tracks[current]) tracks[current].pause();
+  current = null;
 }
 
 export function unlockAudio() {
